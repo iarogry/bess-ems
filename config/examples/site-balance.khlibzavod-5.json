@@ -1,0 +1,218 @@
+{
+  "site_id": "site-khlibzavod-5",
+  "name": "Khlibzavod 5",
+  "status": "draft_meter_roles_pending",
+  "cross_check_tolerance_percent": 5,
+  "askue": {
+    "account_binding": "one_askue_account_per_site",
+    "source": "askue",
+    "meter_roles_assigned_manually": true,
+    "raw_channels": {
+      "A+": "active_energy_import",
+      "A-": "active_energy_export",
+      "R+": "reactive_energy_import",
+      "R-": "reactive_energy_export"
+    }
+  },
+  "fusionsolar": {
+    "enabled": false,
+    "stations": []
+  },
+  "deye_cloud": {
+    "enabled": true,
+    "stations": [
+      {
+        "station_id": "62225431",
+        "source": "deye_cloud",
+        "source_role": "pv_generation",
+        "instrument_type": "pv",
+        "generation_type": "solar"
+      }
+    ]
+  },
+  "sign_convention": {
+    "site_net_balance": "positive_import_negative_export",
+    "a_plus": "import_or_consumption",
+    "a_minus": "export_or_generation"
+  },
+  "meters": [
+    {
+      "meter_id": "869",
+      "name": "ОГК Спутник 1",
+      "source": "askue",
+      "role": "subconsumer_meter",
+      "enabled": true,
+      "scale": -1,
+      "parent_memberships": [
+        0,
+        1
+      ],
+      "value_multiplier": 40
+    },
+    {
+      "meter_id": "870",
+      "name": "ПС Спутник ф.11",
+      "source": "askue",
+      "role": "main_grid_meter",
+      "enabled": true,
+      "scale": 1,
+      "parent_memberships": [
+        0,
+        1
+      ],
+      "value_multiplier": 3000
+    },
+    {
+      "meter_id": "871",
+      "name": "ПС Спутник ф.2",
+      "source": "askue",
+      "role": "main_grid_meter",
+      "enabled": true,
+      "scale": 1,
+      "parent_memberships": [
+        0,
+        1
+      ],
+      "value_multiplier": 3000
+    },
+    {
+      "meter_id": "899",
+      "name": "СПД-ФО Савенков І.І.",
+      "source": "askue",
+      "role": "subconsumer_meter",
+      "enabled": true,
+      "scale": -1,
+      "parent_memberships": [
+        0,
+        1
+      ],
+      "value_multiplier": 1
+    },
+    {
+      "meter_id": "900",
+      "name": "ГК Хлібозаводський",
+      "source": "askue",
+      "role": "subconsumer_meter",
+      "enabled": true,
+      "scale": -1,
+      "parent_memberships": [
+        0,
+        1
+      ],
+      "value_multiplier": 1
+    },
+    {
+      "meter_id": "929",
+      "name": "КГУ",
+      "source": "askue",
+      "role": "generation_meter",
+      "generation_type": "gas_cogeneration",
+      "enabled": true,
+      "scale": 1,
+      "parent_memberships": [
+        0
+      ],
+      "value_multiplier": 200
+    },
+    {
+      "meter_id": "872",
+      "name": "ПС Хлебзавод №5 яч.11",
+      "source": "askue",
+      "role": "subconsumer_meter",
+      "enabled": true,
+      "scale": -1,
+      "parent_memberships": [
+        0,
+        1
+      ],
+      "value_multiplier": 1000
+    },
+    {
+      "meter_id": "873",
+      "name": "ПС Хлебзавод №5 яч.13",
+      "source": "askue",
+      "role": "subconsumer_meter",
+      "enabled": true,
+      "scale": -1,
+      "parent_memberships": [
+        0,
+        1
+      ],
+      "value_multiplier": 1000
+    },
+    {
+      "meter_id": "874",
+      "name": "ПС Хлебзавод №5 яч.14",
+      "source": "askue",
+      "role": "subconsumer_meter",
+      "enabled": true,
+      "scale": -1,
+      "parent_memberships": [
+        0,
+        1
+      ],
+      "value_multiplier": 1000
+    },
+    {
+      "meter_id": "875",
+      "name": "ПС Хлебзавод №5 яч.18",
+      "source": "askue",
+      "role": "subconsumer_meter",
+      "enabled": true,
+      "scale": -1,
+      "parent_memberships": [
+        0,
+        1
+      ],
+      "value_multiplier": 1000
+    },
+    {
+      "meter_id": "876",
+      "name": "ТОВ Терра-Форум (Вв 1 Хлебзавод 5)",
+      "source": "askue",
+      "role": "subconsumer_meter",
+      "enabled": true,
+      "scale": -1,
+      "parent_memberships": [
+        0,
+        1
+      ],
+      "value_multiplier": 40
+    }
+  ],
+  "allowed_roles": [
+    "unassigned",
+    "main_grid_meter",
+    "subconsumer_meter",
+    "generation_meter",
+    "technical_meter",
+    "check_meter",
+    "disabled"
+  ],
+  "generation_types": [
+    "solar",
+    "gas_cogeneration",
+    "diesel",
+    "petrol",
+    "steam_turbine",
+    "other"
+  ],
+  "derived_values": [
+    "own_consumption",
+    "net_generation_by_type",
+    "grid_import",
+    "grid_export",
+    "subconsumer_consumption",
+    "battery_charge_from_battery_ems_telemetry",
+    "battery_discharge_from_battery_ems_telemetry",
+    "site_net_balance",
+    "data_quality_status"
+  ],
+  "role_assignment_notes": [
+    "Set exactly one role per ASKUE meter.",
+    "Use generation_type only when role is generation_meter.",
+    "FusionSolar is absent for this site draft.",
+    "Deye Cloud station 62225431 is configured as PV generation telemetry, not the accounting source.",
+    "ASKUE remains the accounting source for balance and finance."
+  ]
+}

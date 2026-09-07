@@ -1,0 +1,4 @@
+pvlib==0.15.1
+pandas==3.0.3
+numpy==2.4.6
+requests==2.34.2

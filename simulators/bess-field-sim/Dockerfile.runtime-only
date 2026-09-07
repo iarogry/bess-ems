@@ -1,0 +1,18 @@
+FROM golang:1.26 AS build
+WORKDIR /src
+ENV GOFLAGS="-mod=readonly" \
+    GOMODCACHE=/go/pkg/mod \
+    GOCACHE=/root/.cache/go-build
+COPY go.mod ./
+COPY go.sum ./
+RUN mkdir -p "$GOMODCACHE" && go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/bess-field-sim ./cmd/bess-field-sim
+
+FROM debian:bookworm-slim AS runtime
+RUN apt-get update \
+ && apt-get install --yes --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+WORKDIR /
+COPY --from=build /out/bess-field-sim /usr/local/bin/bess-field-sim
+ENTRYPOINT ["/usr/local/bin/bess-field-sim"]
