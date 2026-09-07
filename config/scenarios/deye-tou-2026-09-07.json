@@ -28,7 +28,7 @@
   },
   "signConvention": "negative aggregateTargetPowerKw is charge; positive is discharge",
   "hourlyPricesUahMwh": [7000, 5000, 3500, 3700, 4000, 4500, 7000, 10500, 6000, 2985, 490, 10, 10, 10, 10, 10, 1485, 6250, 11116, 13895, 15000, 14974.78, 12500, 8840],
-  "hourlyAggregateTargetPowerKw": [150.4, 0, -160, -160, -160, -16.2, 160, 160, 127.9, 0, 0, 0, -16.2, -160, -160, -160, 0, 0, 0, 127.9, 160, 160, 0, 0],
+  "hourlyAggregateTargetPowerKw": [150.4, 0, -160, -160, -160, -16.2, 160, 160, 127.9, 0, 0, -160, -160, -160, -16.2, 0, 0, 0, 0, 127.9, 160, 160, 0, 0],
   "touWindows": [
     {
       "id": "Z1",
@@ -51,9 +51,9 @@
         { "from": "00:00", "to": "06:00", "state": "gray", "action": "preserve" },
         { "from": "06:00", "to": "08:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 160, "masterPowerW": 80000 },
         { "from": "08:00", "to": "09:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 127.9, "masterPowerW": 63950 },
-        { "from": "09:00", "to": "12:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0 },
-        { "from": "12:00", "to": "18:00", "state": "gray", "action": "preserve" },
-        { "from": "18:00", "to": "24:00", "state": "gray", "action": "preserve" }
+        { "from": "09:00", "to": "11:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0 },
+        { "from": "11:00", "to": "12:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000 },
+        { "from": "12:00", "to": "24:00", "state": "gray", "action": "preserve" }
       ]
     },
     {
@@ -62,9 +62,9 @@
       "activeRange": "12:00-18:00",
       "intervals": [
         { "from": "00:00", "to": "12:00", "state": "gray", "action": "preserve" },
-        { "from": "12:00", "to": "13:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -16.2, "masterPowerW": 8100 },
-        { "from": "13:00", "to": "14:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000 },
-        { "from": "14:00", "to": "16:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000 },
+        { "from": "12:00", "to": "14:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000 },
+        { "from": "14:00", "to": "15:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -16.2, "masterPowerW": 8100 },
+        { "from": "15:00", "to": "16:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0 },
         { "from": "16:00", "to": "18:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0 },
         { "from": "18:00", "to": "24:00", "state": "gray", "action": "preserve" }
       ]

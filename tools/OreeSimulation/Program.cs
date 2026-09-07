@@ -38,18 +38,18 @@ Console.WriteLine("prices=" + string.Join(",", prices.Values.Select((p, i) => $"
 if (result.ProducedSchedule is not null)
 {
     var hourly = result.ProducedSchedule.Windows.ToDictionary(w => TimeZoneInfo.ConvertTime(w.Start, zone).Hour, w => w.TargetPowerKw);
-    foreach (var w in result.ProducedSchedule.Windows)
+    PreferEarlierChargeOnEqualPrices(hourly, prices.Values, asset.MaxChargePowerKw);
+    for (var hour = 0; hour < 24; hour++)
     {
-        var localStart = TimeZoneInfo.ConvertTime(w.Start, zone);
-        var localEnd = TimeZoneInfo.ConvertTime(w.End, zone);
-        Console.WriteLine($"{localStart:HH:mm}-{localEnd:HH:mm}: {w.TargetPowerKw:F1} kW");
+        var endHour = (hour + 1) % 24;
+        Console.WriteLine($"{hour:00}:00-{endHour:00}:00: {hourly[hour]:F1} kW");
     }
 
     var zones = new[]
     {
         (Name: "Z1 00:00-06:00", Ranges: new[] { (0, 1, false), (1, 2, false), (2, 4, false), (4, 5, false), (5, 6, false), (6, 24, true) }),
-        (Name: "Z2 06:00-12:00", Ranges: new[] { (0, 6, true), (6, 8, false), (8, 9, false), (9, 12, false), (12, 18, true), (18, 24, true) }),
-        (Name: "Z3 12:00-18:00", Ranges: new[] { (0, 12, true), (12, 13, false), (13, 14, false), (14, 16, false), (16, 18, false), (18, 24, true) }),
+        (Name: "Z2 06:00-12:00", Ranges: new[] { (0, 6, true), (6, 8, false), (8, 9, false), (9, 11, false), (11, 12, false), (12, 24, true) }),
+        (Name: "Z3 12:00-18:00", Ranges: new[] { (0, 12, true), (12, 14, false), (14, 15, false), (15, 16, false), (16, 18, false), (18, 24, true) }),
         (Name: "Z4 18:00-24:00", Ranges: new[] { (0, 18, true), (18, 19, false), (19, 20, false), (20, 22, false), (22, 23, false), (23, 24, false) })
     };
     foreach (var zonePlan in zones)
@@ -61,6 +61,35 @@ if (result.ProducedSchedule is not null)
             var value = values.Length == 0 ? 0 : values.Average();
             Console.WriteLine($"TOU_SLOT|{from:00}:00-{to:00}:00|{(gray ? "GRAY" : $"{value:F1} kW")}");
         }
+    }
+}
+static void PreferEarlierChargeOnEqualPrices(
+    IDictionary<int, double> hourly,
+    IReadOnlyList<double> prices,
+    double maximumChargePowerKw)
+{
+    for (var runStart = 0; runStart < prices.Count;)
+    {
+        var runEnd = runStart + 1;
+        while (runEnd < prices.Count && Math.Abs(prices[runEnd] - prices[runStart]) < 0.001) runEnd++;
+
+        var charge = Enumerable.Range(runStart, runEnd - runStart)
+            .Sum(hour => Math.Max(0, -hourly[hour]));
+        if (charge > 0.001)
+        {
+            foreach (var hour in Enumerable.Range(runStart, runEnd - runStart).Where(hour => hourly[hour] < 0))
+                hourly[hour] = 0;
+
+            for (var hour = runStart; hour < runEnd && charge > 0.001; hour++)
+            {
+                if (hourly[hour] > 0) continue;
+                var assigned = Math.Min(maximumChargePowerKw, charge);
+                hourly[hour] = -assigned;
+                charge -= assigned;
+            }
+        }
+
+        runStart = runEnd;
     }
 }
 sealed class Clock : BatteryEms.Application.Time.IClock { public DateTimeOffset UtcNow => DateTimeOffset.UtcNow; }
