@@ -9,7 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Deye Cloud authentication handler with token caching, SHA-256 password
+  hashing, automatic refresh after HTTP 401 and guarded TOU command polling.
+- Read-only TOU audit output and a one-shot guarded test writer with order
+  polling and post-write verification.
+- OREE hourly price-file adapter and simulation tooling for the aggregated
+  641.52 kWh parallel BESS model.
+
 ### Changed
+
+- Deye parallel topology is modelled as one aggregate asset: two inverters,
+  160 kW aggregate charge/discharge limit, master-only writes and BMS as the
+  source of truth.
+- The first live TOU test changed the first configured interval's power from
+  80 kW to 79 kW (confirmed in the Deye cabinet on 2026-09-04).
 
 ### Fixed
 
