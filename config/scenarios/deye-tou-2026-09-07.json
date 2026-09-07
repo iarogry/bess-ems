@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "deliveryDate": "2026-09-07",
+  "timeZone": "Europe/Kyiv",
+  "priceSource": "OREE_DAM_IPS",
+  "planStatus": "Optimal",
+  "applyStatus": "not_applied",
+  "telemetry": {
+    "source": "Deye master inverter BMS",
+    "collectedAt": "2026-09-07T12:01:19+03:00",
+    "socPercent": 43.5,
+    "bmsSocChannelsPercent": [44, 43],
+    "voltageV": 536.2,
+    "batteryPowerKw": -67.02,
+    "nominalCapacityKwh": 673.47
+  },
+  "limits": {
+    "parallelInverterCount": 2,
+    "ratedCapacityAhPerString": 314,
+    "aggregatePowerKw": 160,
+    "masterTouPowerLimitKw": 80,
+    "upsReserveSocPercent": 20,
+    "maximumSocPercent": 90
+  },
+  "economics": {
+    "currency": "UAH",
+    "objectiveValue": -9322.08
+  },
+  "signConvention": "negative aggregateTargetPowerKw is charge; positive is discharge",
+  "hourlyPricesUahMwh": [7000, 5000, 3500, 3700, 4000, 4500, 7000, 10500, 6000, 2985, 490, 10, 10, 10, 10, 10, 1485, 6250, 11116, 13895, 15000, 14974.78, 12500, 8840],
+  "hourlyAggregateTargetPowerKw": [150.4, 0, -160, -160, -160, -16.2, 160, 160, 127.9, 0, 0, 0, -16.2, -160, -160, -160, 0, 0, 0, 127.9, 160, 160, 0, 0],
+  "touWindows": [
+    {
+      "id": "Z1",
+      "activateAt": "2026-09-06T23:55:00+03:00",
+      "activeRange": "00:00-06:00",
+      "intervals": [
+        { "from": "00:00", "to": "01:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 150.4, "masterPowerW": 75200 },
+        { "from": "01:00", "to": "02:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0 },
+        { "from": "02:00", "to": "04:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000 },
+        { "from": "04:00", "to": "05:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000 },
+        { "from": "05:00", "to": "06:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -16.2, "masterPowerW": 8100 },
+        { "from": "06:00", "to": "24:00", "state": "gray", "action": "preserve" }
+      ]
+    },
+    {
+      "id": "Z2",
+      "activateAt": "2026-09-07T05:55:00+03:00",
+      "activeRange": "06:00-12:00",
+      "intervals": [
+        { "from": "00:00", "to": "06:00", "state": "gray", "action": "preserve" },
+        { "from": "06:00", "to": "08:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 160, "masterPowerW": 80000 },
+        { "from": "08:00", "to": "09:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 127.9, "masterPowerW": 63950 },
+        { "from": "09:00", "to": "12:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0 },
+        { "from": "12:00", "to": "18:00", "state": "gray", "action": "preserve" },
+        { "from": "18:00", "to": "24:00", "state": "gray", "action": "preserve" }
+      ]
+    },
+    {
+      "id": "Z3",
+      "activateAt": "2026-09-07T11:55:00+03:00",
+      "activeRange": "12:00-18:00",
+      "intervals": [
+        { "from": "00:00", "to": "12:00", "state": "gray", "action": "preserve" },
+        { "from": "12:00", "to": "13:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -16.2, "masterPowerW": 8100 },
+        { "from": "13:00", "to": "14:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000 },
+        { "from": "14:00", "to": "16:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000 },
+        { "from": "16:00", "to": "18:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0 },
+        { "from": "18:00", "to": "24:00", "state": "gray", "action": "preserve" }
+      ]
+    },
+    {
+      "id": "Z4",
+      "activateAt": "2026-09-07T17:55:00+03:00",
+      "activeRange": "18:00-24:00",
+      "intervals": [
+        { "from": "00:00", "to": "18:00", "state": "gray", "action": "preserve" },
+        { "from": "18:00", "to": "19:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0 },
+        { "from": "19:00", "to": "20:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 127.9, "masterPowerW": 63950 },
+        { "from": "20:00", "to": "22:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 160, "masterPowerW": 80000 },
+        { "from": "22:00", "to": "23:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0 },
+        { "from": "23:00", "to": "24:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0 }
+      ]
+    }
+  ]
+}

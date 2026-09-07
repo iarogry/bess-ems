@@ -161,7 +161,12 @@ if ($devices) {
         device_types = @($items.deviceType | Sort-Object -Unique)
     } | ConvertTo-Json -Depth 4 -Compress | Write-Output
 
-    $inverter = $items | Where-Object { $_.deviceType -eq 'INVERTER' } | Select-Object -First 1
+    $masterSerial = $envMap['DeyeCloud__MasterSerial']
+    $inverter = if ($masterSerial) {
+        $items | Where-Object { $_.deviceType -eq 'INVERTER' -and $_.deviceSn -eq $masterSerial } | Select-Object -First 1
+    } else {
+        $items | Where-Object { $_.deviceType -eq 'INVERTER' } | Select-Object -First 1
+    }
     if ($inverter) {
         $points = Invoke-DeyeRead -Name 'device/measurePoints' -Path '/device/measurePoints' -Body @{ deviceSn = $inverter.deviceSn; deviceType = 'INVERTER' } -Token $token
         if ($points) {
@@ -181,6 +186,10 @@ if ($devices) {
         $deviceLatest = Invoke-DeyeRead -Name 'device/latest' -Path '/device/latest' -Body @{ deviceList = @($inverter.deviceSn) } -Token $token
         if ($deviceLatest) {
             $deviceData = @($deviceLatest.deviceDataList ?? $deviceLatest.data) | Select-Object -First 1
+            $metricMap = @{}
+            foreach ($metric in @($deviceData.dataList)) {
+                if ($metric.key) { $metricMap[[string] $metric.key] = $metric.value }
+            }
             [pscustomobject]@{
                 endpoint = 'device/latest-summary'
                 http = 200
@@ -188,6 +197,16 @@ if ($devices) {
                 success = [bool] $deviceLatest.success
                 metric_count = @($deviceData.dataList).Count
                 collection_time_present = [bool] $deviceData.collectionTime
+            } | ConvertTo-Json -Compress | Write-Output
+            [pscustomobject]@{
+                endpoint = 'device/latest-bms'
+                soc_percent = $metricMap['batCapcity'] ?? $metricMap['batteryCapacity'] ?? $metricMap['batterySOC']
+                soc_candidates = @($deviceData.dataList | Where-Object { $_.key -match '(?i)soc|capacit|capcity' } | ForEach-Object {
+                    [pscustomobject]@{ key = $_.key; value = $_.value; unit = $_.unit }
+                })
+                voltage_v = $metricMap['batteryVoltage']
+                power_w = $metricMap['batteryPower']
+                collection_time = $deviceData.collectionTime
             } | ConvertTo-Json -Compress | Write-Output
         }
 
