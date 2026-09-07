@@ -52,6 +52,7 @@ The system addresses, among other things:
 - LP / MILP / heuristic optimisation via a pluggable solver interface
 - Field communication via Modbus TCP, MQTT and (post-MVP) OPC-UA
 - Near-real-time measurement processing with data-quality assessment
+- Advisory solar-generation forecasting via Open-Meteo weather data
 - Persistence, auditability and monitoring
 
 ---
@@ -171,6 +172,9 @@ in the repository are:
 - `config/` — JSON schemas and example configurations
 - `simulators/bess-field-sim/` — Go field simulator
 - `docs/plan/` — roadmap, active and pending detailed plans
+
+Solar forecasting module documentation:
+[`docs/user/solar-forecast.md`](docs/user/solar-forecast.md)
 
 
 ---

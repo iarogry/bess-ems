@@ -70,6 +70,39 @@ public sealed class ScheduleSolverOptionsTests
     }
 
     [Fact]
+    public void Degradation_power_weighted_options_validate_bounds()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new DegradationCostOptions
+            {
+                EurPerKwhThroughput = 0.01,
+                NominalCRate = 0,
+            }.EnsureValid());
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new DegradationCostOptions
+            {
+                EurPerKwhThroughput = 0.01,
+                NominalCRate = double.NaN,
+            }.EnsureValid());
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new DegradationCostOptions
+            {
+                EurPerKwhThroughput = 0.01,
+                NominalCRate = 0.5,
+                PiecewiseSegments = 0,
+            }.EnsureValid());
+
+        var validated = new DegradationCostOptions
+        {
+            EurPerKwhThroughput = 0.01,
+            NominalCRate = 0.5,
+            PiecewiseSegments = 12,
+        }.EnsureValid();
+        Assert.Equal(0.5, validated.NominalCRate);
+        Assert.Equal(12, validated.PiecewiseSegments);
+    }
+
+    [Fact]
     public void Soc_target_percent_outside_zero_to_hundred_throws()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() =>

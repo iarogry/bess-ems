@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using BatteryEms.Domain;
 
 namespace BatteryEms.Application.Realtime;
@@ -40,7 +41,8 @@ public sealed class InMemorySnapshotStore : ISnapshotStore
         var age = now - snapshot.ReceivedAt;
         if (age > _maxAge && snapshot.Quality.IsUsableForControl)
         {
-            return snapshot with { Quality = DataQuality.Stale($"snapshot-aged-{age.TotalSeconds:F1}s") };
+            var ageSeconds = age.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture);
+            return snapshot with { Quality = DataQuality.Stale($"snapshot-aged-{ageSeconds}s") };
         }
 
         return snapshot;

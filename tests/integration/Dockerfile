@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-#
 # Integration-test runner. Builds the three .NET integration test
 # projects and runs them sequentially against the sidecars wired up in
 # tests/integration/compose.yml: bess-field-sim (Modbus + MQTT publisher

@@ -1,5 +1,6 @@
 using BatteryEms.Domain;
 using Google.OrTools.LinearSolver;
+using System.Globalization;
 
 namespace BatteryEms.Adapters.Optimization.OrTools;
 
@@ -32,7 +33,9 @@ internal static class OrToolsResultMapper
         {
             return (OptimizationSolverStatus.TimeLimit,
                 "or-tools-time-limit",
-                $"{elapsed.TotalSeconds:F3}s > {limit.TotalSeconds:F3}s");
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{elapsed.TotalSeconds:F3}s > {limit.TotalSeconds:F3}s"));
         }
 
         return backendStatus switch
@@ -53,5 +56,5 @@ internal static class OrToolsResultMapper
 
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     private static (OptimizationSolverStatus, string, string?) UnknownStatus(Solver.ResultStatus status) =>
-        (OptimizationSolverStatus.Failed, "or-tools-unknown-status", ((int)status).ToString(System.Globalization.CultureInfo.InvariantCulture));
+        (OptimizationSolverStatus.Failed, "or-tools-unknown-status", ((int)status).ToString(CultureInfo.InvariantCulture));
 }

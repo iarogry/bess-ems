@@ -39,6 +39,20 @@ public sealed class OrToolsScheduleOptimizerPreflightTests
     }
 
     [Fact]
+    public async Task Uah_per_mwh_price_unit_is_supported_for_rdn()
+    {
+        var optimizer = Build();
+        var request = NewRequest(prices: TwoStepPrices, priceUnit: "UAH/MWh");
+
+        var result = await optimizer.OptimizeAsync(request, CancellationToken.None);
+
+        Assert.Equal(OptimizationSolverStatus.Optimal, result.Run.Status);
+        Assert.NotNull(result.ProducedSchedule);
+        Assert.Contains(result.Run.ObjectiveBreakdown.Components,
+            component => component.Name == "energy_cost" && component.Unit == "UAH");
+    }
+
+    [Fact]
     public async Task Initial_soc_below_min_band_yields_failed()
     {
         var optimizer = Build(new ScheduleSolverOptions { InitialSocPercent = 5 });

@@ -2,6 +2,8 @@ using BatteryEms.Adapters.Persistence;
 using BatteryEms.Application.IO;
 using BatteryEms.Application.Markets;
 using BatteryEms.Application.Persistence;
+using BatteryEms.Application.Forecasting;
+using BatteryEms.Application.Site;
 using BatteryEms.Application.Time;
 using BatteryEms.Domain;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -19,6 +21,8 @@ public sealed class PersistenceRoundtripTests : IAsyncLifetime
 
     private static readonly string[] TightSocWarnings = { "tight-binding-soc-floor" };
     private static readonly string[] SocFloorViolations = { "soc_floor_violated" };
+    private static readonly double[] InitialRdnPrices = { 100.5, 95.25 };
+    private static readonly double[] ReplacementRdnPrices = { 90.0, -1.5 };
 
     private NpgsqlDataSource? _dataSource;
     private string? _connectionString;
@@ -323,6 +327,209 @@ public sealed class PersistenceRoundtripTests : IAsyncLifetime
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             repo.ReplaceAsync(schedule, expectedBaseVersion: -1, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Price_series_store_imports_replaces_and_loads_series()
+    {
+        var store = new DapperPriceSeriesStore(_dataSource!);
+        var request = new PriceSeriesRequest(
+            "10Y1001A1001A39I",
+            "rdn",
+            "energy_price",
+            "entso-e",
+            Now,
+            Now + TimeSpan.FromHours(2),
+            TimeSpan.FromHours(1));
+
+        await store.ImportAsync(new PriceSeries(
+            request.MarketBidArea,
+            request.Product,
+            request.PriceKind,
+            "EUR/MWh",
+            request.Source,
+            request.HorizonStart,
+            request.HorizonEnd,
+            request.TimeStep,
+            InitialRdnPrices),
+            CancellationToken.None);
+
+        await store.ImportAsync(new PriceSeries(
+            request.MarketBidArea,
+            request.Product,
+            request.PriceKind,
+            "EUR/MWh",
+            request.Source,
+            request.HorizonStart,
+            request.HorizonEnd,
+            request.TimeStep,
+            ReplacementRdnPrices),
+            CancellationToken.None);
+
+        var loaded = await store.LoadAsync(request, CancellationToken.None);
+
+        Assert.Equal("EUR/MWh", loaded.Unit);
+        Assert.Equal(ReplacementRdnPrices, loaded.Values);
+    }
+
+    [Fact]
+    public async Task Price_series_store_normalizes_non_utc_offsets_for_postgres()
+    {
+        var store = new DapperPriceSeriesStore(_dataSource!);
+        var kyivStart = new DateTimeOffset(2026, 6, 4, 0, 0, 0, TimeSpan.FromHours(3));
+        var request = new PriceSeriesRequest(
+            "10Y1001A1001A39I",
+            "rdn",
+            "energy_price",
+            "entso-e",
+            kyivStart,
+            kyivStart + TimeSpan.FromHours(2),
+            TimeSpan.FromHours(1));
+
+        await store.ImportAsync(new PriceSeries(
+            request.MarketBidArea,
+            request.Product,
+            request.PriceKind,
+            "UAH/MWh",
+            request.Source,
+            request.HorizonStart,
+            request.HorizonEnd,
+            request.TimeStep,
+            InitialRdnPrices),
+            CancellationToken.None);
+
+        var loaded = await store.LoadAsync(request, CancellationToken.None);
+        var loadedFromUtcRequest = await store.LoadAsync(new PriceSeriesRequest(
+            request.MarketBidArea,
+            request.Product,
+            request.PriceKind,
+            request.Source,
+            request.HorizonStart.ToUniversalTime(),
+            request.HorizonEnd.ToUniversalTime(),
+            request.TimeStep), CancellationToken.None);
+
+        Assert.Equal("UAH/MWh", loaded.Unit);
+        Assert.Equal(request.HorizonStart.ToUniversalTime(), loaded.HorizonStart);
+        Assert.Equal(request.HorizonEnd.ToUniversalTime(), loaded.HorizonEnd);
+        Assert.Equal(InitialRdnPrices, loaded.Values);
+        Assert.Equal(InitialRdnPrices, loadedFromUtcRequest.Values);
+    }
+
+    [Fact]
+    public async Task Site_measurement_store_round_trips_status_only_rows()
+    {
+        var store = new DapperSiteMeasurementStore(_dataSource!);
+        var timestamp = Now.AddMinutes(15);
+
+        await store.AppendAsync([
+            new SiteMeasurementReading(
+                "site-1",
+                "fusionsolar",
+                "pv",
+                "NE=129469793",
+                "Roof PV",
+                timestamp,
+                TimeSpan.FromHours(1),
+                "pv_energy",
+                null,
+                "kWh",
+                "source_error",
+                MetadataJson: """{"fail_code":"20056"}"""),
+        ], CancellationToken.None);
+
+        var loaded = Assert.Single(await store.QueryAsync(
+            new SiteMeasurementQuery("site-1", timestamp.AddMinutes(-1), timestamp.AddMinutes(1)),
+            CancellationToken.None));
+
+        Assert.Equal("source_error", loaded.Quality);
+        Assert.Null(loaded.Value);
+        Assert.Equal("pv_energy", loaded.Metric);
+        Assert.Contains("\"fail_code\"", loaded.MetadataJson, StringComparison.Ordinal);
+        Assert.Contains("\"20056\"", loaded.MetadataJson, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Site_pv_profile_store_round_trips_and_lists_enabled_profiles()
+    {
+        var store = new DapperSitePvProfileStore(_dataSource!);
+        var profile = new SitePvProfile(
+            SiteId: "site-1",
+            PvSystemId: "pv-roof",
+            Name: "Roof PV",
+            ForecastAssetId: "site-1-pv-roof",
+            Enabled: true,
+            Latitude: 50.45,
+            Longitude: 30.52,
+            TiltDegrees: 25,
+            AzimuthDegrees: 0,
+            InstalledDcKw: 500,
+            InverterAcKw: 450,
+            TemperatureCoefficientPerDegree: -0.004,
+            SystemLossFraction: 0.14,
+            ForecastHorizonHours: 48,
+            ForecastResolutionMinutes: 15,
+            ForecastProvider: "open_meteo",
+            ForecastEngine: "pvlib_sidecar");
+
+        await store.UpsertAsync(profile, CancellationToken.None);
+
+        var loaded = await store.FindAsync("site-1", "pv-roof", CancellationToken.None);
+        var enabled = await store.ListEnabledAsync(CancellationToken.None);
+        var bySite = await store.ListBySiteAsync("site-1", CancellationToken.None);
+
+        Assert.NotNull(loaded);
+        Assert.Equal("site-1-pv-roof", loaded!.ForecastAssetId);
+        Assert.Single(enabled);
+        Assert.Single(bySite);
+        Assert.Equal("pv-roof", bySite[0].PvSystemId);
+    }
+
+    [Fact]
+    public async Task Solar_forecast_store_replaces_latest_payload_and_round_trips_points()
+    {
+        var store = new DapperSolarForecastStore(_dataSource!);
+        var first = new SolarForecast(
+            assetId: "site-1-pv-roof",
+            source: "open-meteo",
+            model: "pvlib",
+            generatedAt: Now,
+            horizonStart: Now,
+            horizonEnd: Now + TimeSpan.FromMinutes(30),
+            timeStep: TimeSpan.FromMinutes(15),
+            installedDcKw: 500,
+            installedAcKw: 450,
+            points:
+            [
+                new SolarForecastPoint(Now, 120, 520, 26, 3.2, 10),
+                new SolarForecastPoint(Now + TimeSpan.FromMinutes(15), 135, 560, 27, 3.5, 8),
+            ]);
+        var replacement = new SolarForecast(
+            assetId: "site-1-pv-roof",
+            source: "open-meteo",
+            model: "pvlib",
+            generatedAt: Now + TimeSpan.FromMinutes(5),
+            horizonStart: Now,
+            horizonEnd: Now + TimeSpan.FromMinutes(45),
+            timeStep: TimeSpan.FromMinutes(15),
+            installedDcKw: 500,
+            installedAcKw: 450,
+            points:
+            [
+                new SolarForecastPoint(Now, 140, 580, 27, 3.1, 7),
+                new SolarForecastPoint(Now + TimeSpan.FromMinutes(15), 155, 620, 28, 3.0, 6),
+                new SolarForecastPoint(Now + TimeSpan.FromMinutes(30), 165, 640, 29, 2.8, 5),
+            ]);
+
+        await store.UpdateAsync(first, CancellationToken.None);
+        await store.UpdateAsync(replacement, CancellationToken.None);
+
+        var loaded = await store.GetLatestAsync("site-1-pv-roof", CancellationToken.None);
+
+        Assert.NotNull(loaded);
+        Assert.Equal(replacement.GeneratedAt, loaded!.GeneratedAt);
+        Assert.Equal(replacement.HorizonEnd, loaded.HorizonEnd);
+        Assert.Equal(3, loaded.Points.Count);
+        Assert.Equal(165, loaded.Points[^1].PowerKw);
     }
 
     [Fact]
@@ -661,7 +868,9 @@ public sealed class PersistenceRoundtripTests : IAsyncLifetime
             await using var cmd = new NpgsqlCommand(
                 "TRUNCATE telemetry, commands, schedule_windows, schedules, audit_events, "
                 + "optimization_objective_breakdowns, optimization_runs, "
-                + "regelleistung_activations RESTART IDENTITY CASCADE;",
+                + "regelleistung_activations, price_series_points, price_series, "
+                + "site_measurements, site_consumption_readings, site_pv_profiles, solar_forecast_points, solar_forecasts "
+                + "RESTART IDENTITY CASCADE;",
                 connection);
             await cmd.ExecuteNonQueryAsync();
         }

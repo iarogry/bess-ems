@@ -699,7 +699,8 @@ bleiben.
 Das Runtime-Image ist gehärtet und folgt dem Multi-Stage-Pattern aus
 [`spec/architecture.md`](../../spec/architecture.md) §15:
 
-- Final-Image: `mcr.microsoft.com/dotnet/aspnet:10.0` (Ubuntu 24.04 Noble, kein SDK)
+- Final-Image: `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled`
+  (Ubuntu 24.04 Noble, kein SDK, keine Shell-/Package-Manager-Tools)
 - `native-build`-Stage erzeugt `libbattery_control_core.so` aus
   `native/battery_control_core/` reproduzierbar; das Runtime-Image
   COPYed sie nach `/app/native/libbattery_control_core.so`
@@ -708,12 +709,13 @@ Das Runtime-Image ist gehärtet und folgt dem Multi-Stage-Pattern aus
   Dynamic-Deps zieht. Aktuelle `.so` (RM-M3-09 closure) ist
   C-only, hat null `NEEDED`-Einträge und keine libstdc++-Linkage.
   (LH-NATIVE-006, LH-DEPLOY-004)
-- App läuft als nicht-root User `app` (UID 1654, in der
+- App läuft als nicht-root User `app` (UID 1654, in der chiseled
   aspnet-Base bereits angelegt)
 - Exposed Port: `8080`
-- Healthcheck im Compose-Manifest auf `/health`; `make runtime`
-  prüft zusätzlich `test -f /app/native/libbattery_control_core.so`
-  plus `ldd` im laufenden Container
+- `/health` wird im Runtime-Smoke vom Host gegen den veröffentlichten
+  Port geprüft. Die chiseled Runtime enthält bewusst kein `curl`,
+  `test`, `sh` oder `ldd`; die native ABI-Auflösung bleibt deshalb im
+  Build-Time-Stage `verify-runtime-deps`.
 
 Smoke-Test (LH-DEPLOY-001/002, LH-TEST-007):
 

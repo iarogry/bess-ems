@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using BatteryEms.Application.Configuration;
+using BatteryEms.Application.Site;
 using BatteryEms.Domain;
 using Json.Schema;
 
@@ -291,6 +292,41 @@ public sealed class JsonFileConfigurationLoader : IConfigurationLoader
         }
     }
 
+    public SiteBalanceConfiguration LoadSiteBalanceConfiguration(string filePath)
+    {
+        var node = LoadJson(filePath);
+        var dto = node.Deserialize<SiteBalanceConfigurationDto>(_serializerOptions)
+            ?? throw new ConfigurationValidationException($"Failed to deserialize {filePath} as site balance configuration.");
+        if (dto.Meters is null || dto.Meters.Count == 0)
+        {
+            throw new ConfigurationValidationException($"{filePath} has no site balance meter list.");
+        }
+
+        try
+        {
+            var meters = dto.Meters
+                .Select(meter => new SiteBalanceMeter(
+                    MeterId: meter.MeterId,
+                    Name: meter.Name,
+                    Role: ParseSiteBalanceMeterRole(filePath, meter.MeterId, meter.Role),
+                    Enabled: meter.Enabled && !string.Equals(meter.Role, "disabled", StringComparison.Ordinal),
+                    GenerationType: string.IsNullOrWhiteSpace(meter.GenerationType) ? null : meter.GenerationType,
+                    ValueMultiplier: meter.ValueMultiplier ?? 1))
+                .ToArray();
+
+            return new SiteBalanceConfiguration(
+                dto.SiteId,
+                meters,
+                dto.CrossCheckTolerancePercent ?? 5).EnsureValid();
+        }
+        catch (ArgumentException ex)
+        {
+            throw new ConfigurationValidationException(
+                $"Site balance configuration {filePath} violates domain invariants: {ex.Message}",
+                ex);
+        }
+    }
+
     public Schedule LoadSchedule(string filePath)
     {
         var node = LoadAndValidate(filePath, _scheduleSchema);
@@ -513,6 +549,20 @@ public sealed class JsonFileConfigurationLoader : IConfigurationLoader
         return value.Value;
     }
 
+    private static SiteBalanceMeterRole ParseSiteBalanceMeterRole(string filePath, string meterId, string role) =>
+        role switch
+        {
+            "main_grid_meter" => SiteBalanceMeterRole.MainGridMeter,
+            "subconsumer_meter" => SiteBalanceMeterRole.SubconsumerMeter,
+            "generation_meter" => SiteBalanceMeterRole.GenerationMeter,
+            "technical_meter" => SiteBalanceMeterRole.TechnicalMeter,
+            "check_meter" => SiteBalanceMeterRole.CheckMeter,
+            "disabled" => SiteBalanceMeterRole.Disabled,
+            "unassigned" => SiteBalanceMeterRole.Disabled,
+            _ => throw new ConfigurationValidationException(
+                $"{filePath} meter '{meterId}' has unknown site balance role '{role}'."),
+        };
+
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812", Justification = "Instantiated by JsonSerializer via reflection.")]
     private sealed record ModbusMappingDto(
@@ -628,4 +678,21 @@ public sealed class JsonFileConfigurationLoader : IConfigurationLoader
         TimeSpan? CommandsRetention,
         TimeSpan? SchedulesRetention,
         TimeSpan? OperatorAuditRetention);
+
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812", Justification = "Instantiated by JsonSerializer via reflection.")]
+    private sealed record SiteBalanceConfigurationDto(
+        string SiteId,
+        double? CrossCheckTolerancePercent,
+        List<SiteBalanceMeterDto>? Meters);
+
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812", Justification = "Instantiated by JsonSerializer via reflection.")]
+    private sealed record SiteBalanceMeterDto(
+        string MeterId,
+        string Name,
+        string Role,
+        bool Enabled,
+        string? GenerationType = null,
+        double? ValueMultiplier = null);
 }

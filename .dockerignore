@@ -4,6 +4,10 @@
 **/publish
 **/TestResults
 **/coverage
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/.cache
 
 .git
 .gitignore
@@ -14,7 +18,21 @@
 .idea
 *.user
 *.suo
+*.log
+*.binlog
+*.trx
+*.coverage
+*.coveragexml
 
 .agents
 .codex
 .claude
+
+.gocache
+.gomodcache
+.postgres-test
+tmp
+temp
+coverage
+TestResults
+node_modules

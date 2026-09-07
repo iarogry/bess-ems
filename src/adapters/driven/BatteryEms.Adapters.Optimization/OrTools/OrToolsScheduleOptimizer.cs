@@ -21,7 +21,7 @@ namespace BatteryEms.Adapters.Optimization.OrTools;
 public sealed partial class OrToolsScheduleOptimizer : IScheduleOptimizer
 {
     private const string SolverName = "or-tools-glop";
-    private const string SupportedPriceUnit = "EUR/MWh";
+    private static readonly string[] SupportedPriceUnits = { "EUR/MWh", "UAH/MWh" };
 
     // Solutions whose absolute objective value sits below this threshold
     // are snapped to zero before being recorded in the run breakdown so
@@ -87,12 +87,12 @@ public sealed partial class OrToolsScheduleOptimizer : IScheduleOptimizer
                 terminationDetail: null,
                 warning: "PricesPerStep is required for energy-cost optimisation."));
         }
-        if (!string.Equals(request.PriceUnit, SupportedPriceUnit, StringComparison.Ordinal))
+        if (!IsSupportedPriceUnit(request.PriceUnit))
         {
             return Task.FromResult(BuildFailedResult(request,
                 terminationCode: "unsupported-price-unit",
                 terminationDetail: request.PriceUnit,
-                warning: $"OR-Tools schedule optimiser only accepts PriceUnit '{SupportedPriceUnit}'."));
+                warning: $"OR-Tools schedule optimiser only accepts PriceUnit {SupportedPriceUnitsText()}."));
         }
 
         return Task.FromResult(Solve(request, cancellationToken));
@@ -218,6 +218,8 @@ public sealed partial class OrToolsScheduleOptimizer : IScheduleOptimizer
                 objective.SetCoefficient(charge[t], chargeCoef[t]);
                 objective.SetCoefficient(discharge[t], dischargeCoef[t]);
             }
+            var powerWeightedDegradation = ApplyPowerWeightedDegradationObjective(
+                solver, objective, charge, discharge, effChargeMax, effDischargeMax, capacityKwh, dtHours);
             ApplySocTargetObjective(objective, slackBelow, slackAbove, capacityKwh);
             objective.SetMinimization();
 
@@ -238,7 +240,8 @@ public sealed partial class OrToolsScheduleOptimizer : IScheduleOptimizer
             if (mappedStatus is OptimizationSolverStatus.Optimal or OptimizationSolverStatus.Feasible)
             {
                 var components = ComputeObjectiveComponents(
-                    request, charge, discharge, slackBelow, slackAbove, dtHours, capacityKwh);
+                    request, charge, discharge, slackBelow, slackAbove,
+                    powerWeightedDegradation, dtHours, capacityKwh);
                 var rawTotal = components.Sum(c => c.Value);
                 // Snap floating-point noise around a trivial optimum to
                 // exact zero before persisting (review #18) — keeps a
@@ -440,7 +443,7 @@ public sealed partial class OrToolsScheduleOptimizer : IScheduleOptimizer
         var chargeCoef = new double[n];
         var dischargeCoef = new double[n];
 
-        // energy_cost: price[t] (EUR/MWh) * (charge − discharge) (kW) *
+        // energy_cost: price[t] (currency/MWh) * (charge − discharge) (kW) *
         // Δt (h) / 1000. Charging draws from the grid (cost), discharging
         // exports (revenue, negative cost).
         for (var t = 0; t < n; t++)
@@ -450,10 +453,10 @@ public sealed partial class OrToolsScheduleOptimizer : IScheduleOptimizer
             dischargeCoef[t] -= energyCoef;
         }
 
-        // degradation_cost (RM-M2-04): linear throughput proxy. Both
-        // charge and discharge contribute their absolute kWh because both
-        // stress the cells.
-        if (_options.DegradationCost is { } degradation)
+        // degradation_cost (RM-M2-04): linear throughput proxy. The
+        // nonlinear C-rate weighted mode is added later through piecewise
+        // variables, because its marginal coefficient depends on segment.
+        if (_options.DegradationCost is { NominalCRate: null } degradation)
         {
             var degCoef = degradation.EurPerKwhThroughput * dtHours;
             for (var t = 0; t < n; t++)
@@ -464,6 +467,77 @@ public sealed partial class OrToolsScheduleOptimizer : IScheduleOptimizer
         }
 
         return (chargeCoef, dischargeCoef);
+    }
+
+    private PowerWeightedDegradationVariables? ApplyPowerWeightedDegradationObjective(
+        Solver solver,
+        Objective objective,
+        Variable[] charge,
+        Variable[] discharge,
+        double[] effChargeMax,
+        double[] effDischargeMax,
+        double capacityKwh,
+        double dtHours)
+    {
+        if (_options.DegradationCost is not { NominalCRate: { } nominalCRate } degradation)
+        {
+            return null;
+        }
+
+        var nominalPowerKw = nominalCRate * capacityKwh;
+        var chargeSegments = new Variable[charge.Length][];
+        var dischargeSegments = new Variable[discharge.Length][];
+        var chargeCoefficients = new double[charge.Length][];
+        var dischargeCoefficients = new double[discharge.Length][];
+
+        for (var t = 0; t < charge.Length; t++)
+        {
+            (chargeSegments[t], chargeCoefficients[t]) = BuildPowerWeightedSegments(
+                solver, objective, charge[t], effChargeMax[t], degradation, nominalPowerKw, dtHours, $"charge_{t}");
+            (dischargeSegments[t], dischargeCoefficients[t]) = BuildPowerWeightedSegments(
+                solver, objective, discharge[t], effDischargeMax[t], degradation, nominalPowerKw, dtHours, $"discharge_{t}");
+        }
+
+        return new PowerWeightedDegradationVariables(
+            chargeSegments,
+            dischargeSegments,
+            chargeCoefficients,
+            dischargeCoefficients);
+    }
+
+    private static (Variable[] Segments, double[] Coefficients) BuildPowerWeightedSegments(
+        Solver solver,
+        Objective objective,
+        Variable power,
+        double maxPowerKw,
+        DegradationCostOptions degradation,
+        double nominalPowerKw,
+        double dtHours,
+        string name)
+    {
+        if (maxPowerKw <= 0)
+        {
+            return (Array.Empty<Variable>(), Array.Empty<double>());
+        }
+
+        var segments = new Variable[degradation.PiecewiseSegments];
+        var coefficients = new double[degradation.PiecewiseSegments];
+        var width = maxPowerKw / degradation.PiecewiseSegments;
+        var sum = solver.MakeConstraint(0, 0, $"deg_{name}_sum");
+        sum.SetCoefficient(power, 1.0);
+        for (var i = 0; i < segments.Length; i++)
+        {
+            var segment = solver.MakeNumVar(0, width, $"deg_{name}_seg_{i}");
+            var p0 = width * i;
+            var p1 = width * (i + 1);
+            var coefficient = degradation.EurPerKwhThroughput * dtHours * (p0 + p1) / nominalPowerKw;
+            segments[i] = segment;
+            coefficients[i] = coefficient;
+            objective.SetCoefficient(segment, coefficient);
+            sum.SetCoefficient(segment, -1.0);
+        }
+
+        return (segments, coefficients);
     }
 
     // Builds the optional slack variables for the SOC-target penalty.
@@ -547,11 +621,13 @@ public sealed partial class OrToolsScheduleOptimizer : IScheduleOptimizer
         Variable[] discharge,
         Variable[]? slackBelow,
         Variable[]? slackAbove,
+        PowerWeightedDegradationVariables? powerWeightedDegradation,
         double dtHours,
         double capacityKwh)
     {
         var n = request.StepCount;
         var components = new List<OptimizationObjectiveComponent>(capacity: 3);
+        var currencyUnit = ObjectiveCurrencyUnit(request.PriceUnit!);
 
         var energyCost = 0.0;
         for (var t = 0; t < n; t++)
@@ -559,9 +635,9 @@ public sealed partial class OrToolsScheduleOptimizer : IScheduleOptimizer
             var coef = request.PricesPerStep![t] * dtHours / 1000.0;
             energyCost += coef * (charge[t].SolutionValue() - discharge[t].SolutionValue());
         }
-        components.Add(new OptimizationObjectiveComponent("energy_cost", energyCost, "EUR"));
+        components.Add(new OptimizationObjectiveComponent("energy_cost", energyCost, currencyUnit));
 
-        if (_options.DegradationCost is { } degradation)
+        if (_options.DegradationCost is { NominalCRate: null } degradation)
         {
             var degCoef = degradation.EurPerKwhThroughput * dtHours;
             var degradationCost = 0.0;
@@ -569,7 +645,12 @@ public sealed partial class OrToolsScheduleOptimizer : IScheduleOptimizer
             {
                 degradationCost += degCoef * (charge[t].SolutionValue() + discharge[t].SolutionValue());
             }
-            components.Add(new OptimizationObjectiveComponent("degradation_cost", degradationCost, "EUR"));
+            components.Add(new OptimizationObjectiveComponent("degradation_cost", degradationCost, currencyUnit));
+        }
+        else if (powerWeightedDegradation is not null)
+        {
+            var degradationCost = powerWeightedDegradation.Value();
+            components.Add(new OptimizationObjectiveComponent("degradation_cost", degradationCost, currencyUnit));
         }
 
         if (_options.SocTargetPenalty is { } penalty
@@ -581,10 +662,50 @@ public sealed partial class OrToolsScheduleOptimizer : IScheduleOptimizer
             {
                 socPenalty += penaltyEurPerKwh * (slackBelow[t].SolutionValue() + slackAbove[t].SolutionValue());
             }
-            components.Add(new OptimizationObjectiveComponent("soc_target_penalty", socPenalty, "EUR"));
+            components.Add(new OptimizationObjectiveComponent("soc_target_penalty", socPenalty, currencyUnit));
         }
 
         return components;
+    }
+
+    private static bool IsSupportedPriceUnit(string? priceUnit) =>
+        SupportedPriceUnits.Any(unit => string.Equals(unit, priceUnit, StringComparison.Ordinal));
+
+    private static string SupportedPriceUnitsText() =>
+        string.Join(" or ", SupportedPriceUnits.Select(unit => $"'{unit}'"));
+
+    private static string ObjectiveCurrencyUnit(string priceUnit)
+    {
+        var separator = priceUnit.IndexOf('/', StringComparison.Ordinal);
+        return separator <= 0 ? priceUnit : priceUnit[..separator];
+    }
+
+    private sealed record PowerWeightedDegradationVariables(
+        Variable[][] ChargeSegments,
+        Variable[][] DischargeSegments,
+        double[][] ChargeCoefficients,
+        double[][] DischargeCoefficients)
+    {
+        public double Value()
+        {
+            var value = 0.0;
+            value += SegmentValue(ChargeSegments, ChargeCoefficients);
+            value += SegmentValue(DischargeSegments, DischargeCoefficients);
+            return value;
+        }
+
+        private static double SegmentValue(Variable[][] segments, double[][] coefficients)
+        {
+            var value = 0.0;
+            for (var t = 0; t < segments.Length; t++)
+            {
+                for (var i = 0; i < segments[t].Length; i++)
+                {
+                    value += segments[t][i].SolutionValue() * coefficients[t][i];
+                }
+            }
+            return value;
+        }
     }
 
     // Single source of truth for OptimizationRun construction (review #17):

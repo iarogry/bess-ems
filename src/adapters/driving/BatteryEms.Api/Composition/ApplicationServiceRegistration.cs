@@ -1,11 +1,14 @@
 using BatteryEms.Application.Api;
 using BatteryEms.Application.Assets;
 using BatteryEms.Application.Control;
+using BatteryEms.Application.Forecasting;
 using BatteryEms.Application.Markets;
 using BatteryEms.Application.Observability;
 using BatteryEms.Application.Optimization;
+using BatteryEms.Application.Orchestration;
 using BatteryEms.Application.Persistence;
 using BatteryEms.Application.Realtime;
+using BatteryEms.Application.Site;
 using BatteryEms.Application.Time;
 using BatteryEms.Domain;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,13 +21,34 @@ namespace BatteryEms.Api.Composition;
 // Worker (RM-M1-19) will reuse this extension for the same shape.
 public static class ApplicationServiceRegistration
 {
-    public static IServiceCollection AddBessApplicationInMemoryStores(this IServiceCollection services)
+    private static readonly TimeSpan DefaultSnapshotMaxAge = TimeSpan.FromSeconds(10);
+
+    public static IServiceCollection AddBessApplicationInMemoryStores(
+        this IServiceCollection services,
+        TimeSpan? batterySnapshotMaxAge = null,
+        TimeSpan? siteTelemetrySnapshotMaxAge = null)
     {
         ArgumentNullException.ThrowIfNull(services);
 
+        var batteryMaxAge = batterySnapshotMaxAge ?? DefaultSnapshotMaxAge;
+        var siteTelemetryMaxAge = siteTelemetrySnapshotMaxAge ?? DefaultSnapshotMaxAge;
+
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IBatteryAssetRegistry>(_ => new InMemoryBatteryAssetRegistry());
-        services.AddSingleton<ISnapshotStore>(_ => new InMemorySnapshotStore(TimeSpan.FromSeconds(10)));
+        services.AddSingleton<ISnapshotStore>(_ => new InMemorySnapshotStore(batteryMaxAge));
+        services.AddSingleton<ISiteTelemetryStore>(_ => new InMemorySiteTelemetryStore(siteTelemetryMaxAge));
+        services.AddSingleton<ISiteConsumptionStore, InMemorySiteConsumptionStore>();
+        services.AddSingleton<ISiteMeasurementStore, InMemorySiteMeasurementStore>();
+        services.AddSingleton<ISitePvProfileStore, InMemorySitePvProfileStore>();
+        services.AddSingleton<ISolarForecastStore, InMemorySolarForecastStore>();
+        services.AddSingleton<ISiteRegistry, InMemorySiteRegistry>();
+        services.AddSingleton<ISiteSettingsPreparationUseCase, DefaultSiteSettingsPreparationUseCase>();
+        services.AddSingleton<ISiteBalanceUseCase, DefaultSiteBalanceUseCase>();
+        services.AddSingleton<IOrchestrationRunStore, InMemoryOrchestrationRunStore>();
+        services.AddSingleton<IOrchestrationLockStore, InMemoryOrchestrationLockStore>();
+        services.AddSingleton<IDataBalanceStore, InMemoryDataBalanceStore>();
+        services.AddSingleton<IDataReadinessPolicy, DefaultDataReadinessPolicy>();
+        services.AddSingleton<IOrchestrationUseCase, DefaultOrchestrationUseCase>();
         services.AddSingleton<ICommandRepository, InMemoryCommandRepository>();
         services.AddSingleton<IScheduleRepository>(_ => new InMemoryScheduleRepository());
         services.AddSingleton<IScheduleTracker, DefaultScheduleTracker>();
@@ -117,6 +141,8 @@ public static class ApplicationServiceRegistration
         // Driving-port use cases.
         services.AddSingleton<IHealthQuery, DefaultHealthQuery>();
         services.AddSingleton<IBatteryStatusQuery, DefaultBatteryStatusQuery>();
+        services.AddSingleton<ISiteStatusQuery, DefaultSiteStatusQuery>();
+        services.AddSingleton<ISolarForecastQuery, DefaultSolarForecastQuery>();
         services.AddSingleton<IScheduleQuery, DefaultScheduleQuery>();
         services.AddSingleton<IOperatorStopUseCase, DefaultOperatorStopUseCase>();
         services.AddSingleton<IScheduleOptimizationUseCase, DefaultScheduleOptimizationUseCase>();

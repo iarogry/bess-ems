@@ -137,6 +137,35 @@ public sealed class OrToolsScheduleOptimizerObjectiveComponentTests
             $"high-degradation case should not charge; got {highChargeKwh} kWh");
     }
 
+    [Fact]
+    public async Task Power_weighted_degradation_spreads_charge_across_equal_price_hours()
+    {
+        var prices = new[] { 10.0, 10.0, 200.0 };
+        var optimizer = Build(new ScheduleSolverOptions
+        {
+            InitialSocPercent = 50,
+            DegradationCost = new DegradationCostOptions
+            {
+                EurPerKwhThroughput = 0.01,
+                NominalCRate = 0.5,
+                PiecewiseSegments = 20,
+            },
+        });
+
+        var result = await optimizer.OptimizeAsync(
+            NewRequest(TestFixtures.CreateAsset(), prices, TimeSpan.FromHours(1)),
+            CancellationToken.None);
+
+        Assert.Equal(OptimizationSolverStatus.Optimal, result.Run.Status);
+        var charge0 = Math.Max(0, -result.ProducedSchedule!.Windows[0].TargetPowerKw);
+        var charge1 = Math.Max(0, -result.ProducedSchedule.Windows[1].TargetPowerKw);
+
+        Assert.True(charge0 > 1.0, $"first cheap hour should charge; got {charge0} kW");
+        Assert.True(charge1 > 1.0, $"second cheap hour should charge; got {charge1} kW");
+        Assert.True(Math.Abs(charge0 - charge1) <= 2.5,
+            $"equal-price charging should be spread; got {charge0} kW and {charge1} kW");
+    }
+
     // --- soc_target_penalty -----------------------------------------------
 
     [Fact]

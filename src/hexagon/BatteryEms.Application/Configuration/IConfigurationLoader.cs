@@ -1,4 +1,5 @@
 using BatteryEms.Domain;
+using BatteryEms.Application.Site;
 
 namespace BatteryEms.Application.Configuration;
 
@@ -17,6 +18,8 @@ public interface IConfigurationLoader
     Schedule LoadSchedule(string filePath);
 
     RetentionPolicy LoadRetentionPolicy(string filePath);
+
+    SiteBalanceConfiguration LoadSiteBalanceConfiguration(string filePath);
 }
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

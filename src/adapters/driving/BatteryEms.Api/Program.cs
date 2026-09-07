@@ -64,6 +64,10 @@ public class Program
         app.UseOperatorUiStaticShell();
         app.MapOpenApi();
         app.MapBatteryEms();
+        app.MapSiteTelemetryStatus();
+        app.MapSiteData();
+        app.MapSitePvProfiles();
+        app.MapSolarForecasts();
         // LH-MON-002: Prometheus scrape endpoint. M1 exposes the default
         // process metrics (CPU, GC, …) from the API host; RM-M1-19 wires
         // PrometheusControlCycleMetrics in the Worker so the regulation-

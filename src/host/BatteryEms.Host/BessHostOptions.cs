@@ -32,6 +32,43 @@ public sealed class BessHostOptions
     // Application layer take over so headless smoke tests can run.
     public string? PersistenceConnectionString { get; set; }
 
+    // Optional telemetry-source selector. Empty uses the existing
+    // Modbus/MQTT/OPC-UA triage. "deye_cloud" enables the read-only
+    // Deye Cloud telemetry adapter.
+    public string? TelemetrySource { get; set; }
+
+    // Optional max age for battery snapshots served to control/API
+    // read paths. Defaults to 10 seconds when unset.
+    public TimeSpan? BatterySnapshotMaxAge { get; set; }
+
+    // Optional price-source selector. Empty keeps the in-memory import
+    // store. "entso-e" enables the ENTSO-E A44 day-ahead/RDN adapter.
+    public string? PriceSeriesSource { get; set; }
+
+    // Optional site telemetry selector. Empty disables separate PV/site
+    // polling. "fusionsolar" enables the Huawei FusionSolar hourly KPI
+    // adapter and updates ISiteTelemetryStore only.
+    public string? SiteTelemetrySource { get; set; }
+
+    // Optional max age for site telemetry snapshots served to API
+    // read paths. Defaults to 10 seconds when unset.
+    public TimeSpan? SiteTelemetrySnapshotMaxAge { get; set; }
+
+    // Optional site consumption source selector. Empty disables separate
+    // consumption polling. "askue" enables ASKUE load/consumption profile
+    // collection and stores it through ISiteConsumptionStore.
+    public string? ConsumptionSource { get; set; }
+
+    // Optional solar forecast selector. Empty disables separate PV forecast
+    // polling. "open_meteo" enables the Open-Meteo-based advisory forecast
+    // engine and updates ISolarForecastStore only.
+    public string? SolarForecastSource { get; set; }
+
+    public Uri? EntsoeApiBaseUrl { get; set; }
+    public string? EntsoeApiToken { get; set; }
+    public string? EntsoeDomainCode { get; set; }
+    public TimeSpan? EntsoeRequestTimeout { get; set; }
+
     // Optional horizon-solver wiring. Empty / "noop" keeps the
     // Application-layer NoOpScheduleOptimizer; "or_tools" enables the
     // production LP backend from BatteryEms.Adapters.Optimization.
@@ -153,4 +190,7 @@ public sealed class BessScheduleSolverOptions
     public double? TimeLimitSeconds { get; set; }
     public double? GapTolerance { get; set; }
     public double? InitialSocPercent { get; set; }
+    public double? DegradationCostPerKwhThroughput { get; set; }
+    public double? DegradationNominalCRate { get; set; }
+    public int? DegradationPiecewiseSegments { get; set; }
 }

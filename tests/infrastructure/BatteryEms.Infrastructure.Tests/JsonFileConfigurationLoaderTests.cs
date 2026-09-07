@@ -1,4 +1,5 @@
 using BatteryEms.Application.Configuration;
+using BatteryEms.Application.Site;
 using BatteryEms.Infrastructure.Configuration;
 using Xunit;
 
@@ -41,8 +42,11 @@ public sealed class JsonFileConfigurationLoaderTests
         var asset = loader.LoadAsset(Path.Combine(ExamplesDirectory, "asset.single-bess.json"));
 
         Assert.Equal("single-bess-1", asset.AssetId);
-        Assert.Equal(100, asset.CapacityKwh);
-        Assert.Equal(50, asset.MaxChargePowerKw);
+        Assert.Equal(624, asset.CapacityKwh);
+        Assert.Equal(160, asset.MaxChargePowerKw);
+        Assert.Equal(160, asset.MaxDischargePowerKw);
+        Assert.Equal(13, asset.MinSocPercent);
+        Assert.Equal(99, asset.MaxSocPercent);
         Assert.Equal(0.95, asset.ChargeEfficiency);
     }
 
@@ -202,6 +206,48 @@ public sealed class JsonFileConfigurationLoaderTests
         Assert.Equal("mqtt-simulator", mapping.ProfileName);
         Assert.Contains(mapping.Topics, t => t.Direction == "publish" && t.Name == "command");
         Assert.Contains(mapping.Topics, t => t.Direction == "subscribe" && t.Name == "command_ack");
+    }
+
+    [Fact]
+    public void Loads_khlibzavod_site_balance_configuration()
+    {
+        var loader = new JsonFileConfigurationLoader(SchemaDirectory);
+        var configuration = loader.LoadSiteBalanceConfiguration(
+            Path.Combine(ExamplesDirectory, "site-balance.khlibzavod-5.json"));
+
+        Assert.Equal("site-khlibzavod-5", configuration.SiteId);
+        Assert.Equal(5, configuration.CrossCheckTolerancePercent);
+        Assert.Equal(11, configuration.Meters.Count);
+        Assert.Equal(2, configuration.Meters.Count(meter => meter.Role == SiteBalanceMeterRole.MainGridMeter));
+        Assert.Equal(8, configuration.Meters.Count(meter => meter.Role == SiteBalanceMeterRole.SubconsumerMeter));
+        var generation = Assert.Single(configuration.Meters, meter => meter.Role == SiteBalanceMeterRole.GenerationMeter);
+        Assert.Equal("929", generation.MeterId);
+        Assert.Equal("gas_cogeneration", generation.GenerationType);
+        Assert.All(configuration.Meters, meter => Assert.Equal(400, meter.ValueMultiplier));
+
+        var from = new DateTimeOffset(2026, 6, 9, 0, 0, 0, TimeSpan.Zero);
+        var result = SiteBalanceCalculator.Calculate(new SiteBalanceCalculationRequest(
+            configuration,
+            from,
+            from.AddHours(1),
+            [
+                Reading("870", "active_energy_import", 100),
+                Reading("871", "active_energy_import", 50),
+                Reading("869", "active_energy_import", 10),
+                Reading("899", "active_energy_import", 5),
+                Reading("900", "active_energy_import", 5),
+                Reading("872", "active_energy_import", 5),
+                Reading("873", "active_energy_import", 5),
+                Reading("874", "active_energy_import", 5),
+                Reading("875", "active_energy_import", 5),
+                Reading("876", "active_energy_import", 5),
+                Reading("929", "active_energy_export", 20),
+            ],
+            []));
+
+        Assert.Equal(105, result.OwnConsumptionKwh);
+        Assert.Equal(150, result.SiteNetBalanceKwh);
+        Assert.Equal("complete", result.DataQualityStatus);
     }
 
     [Fact]
@@ -1284,4 +1330,18 @@ public sealed class JsonFileConfigurationLoaderTests
         File.WriteAllText(path, content);
         return path;
     }
+
+    private static SiteMeasurementReading Reading(string meterId, string metric, double value) =>
+        new(
+            "site-khlibzavod-5",
+            "askue",
+            "meter",
+            meterId,
+            meterId,
+            new DateTimeOffset(2026, 6, 9, 0, 0, 0, TimeSpan.Zero),
+            TimeSpan.FromHours(1),
+            metric,
+            value,
+            "kWh",
+            "measured");
 }

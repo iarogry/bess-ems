@@ -11,6 +11,8 @@ services:
   bess-ems:
     image: bess-ems-runtime:latest
     pull_policy: never
+    env_file:
+      - ../.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -21,6 +23,9 @@ services:
     environment:
       ASPNETCORE_URLS: http://0.0.0.0:8080
       ASPNETCORE_ENVIRONMENT: Production
+      Bess__ConsumptionSource: askue
+      Bess__BatterySnapshotMaxAge: "00:10:00"
+      Bess__SiteTelemetrySnapshotMaxAge: "00:40:00"
       Bess__SchemaDirectory: /app/config/schema
       Bess__AssetConfigPath: /app/config/examples/asset.single-bess.json
       Bess__PersistenceConnectionString: Host=postgres;Port=5432;Database=bessems;Username=bessems;Password=bessems;Include Error Detail=true
@@ -36,6 +41,13 @@ services:
       ApiTokens__Tokens__0__Token: dev-operator-token
       ApiTokens__Tokens__0__Operator: operator-1
       ApiTokens__Tokens__0__Role: operator
+      Askue__SiteId: site-khlibzavod-5
+      Askue__PeriodSeconds: ${Askue__PeriodSeconds:-1800}
+      Askue__PollIntervalSeconds: ${Askue__PollIntervalSeconds:-1800}
+      Askue__DaysBack: ${Askue__DaysBack:-1}
+      Askue__TimeZoneId: ${Askue__TimeZoneId:-Europe/Kyiv}
+      FusionSolar__PollIntervalSeconds: ${FusionSolar__PollIntervalSeconds:-300}
+      Logging__LogLevel__BatteryEms.Adapters.DeyeCloud: "Debug"
     ports:
       - "8080:8080"
     networks: [bessnet]
@@ -51,6 +63,8 @@ services:
       interval: 2s
       timeout: 1s
       retries: 10
+    ports:
+      - "55432:5432"
     networks: [bessnet]
 
   mosquitto:

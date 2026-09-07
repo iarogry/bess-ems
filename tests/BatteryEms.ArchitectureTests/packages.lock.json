@@ -381,6 +381,32 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "batteryems.adapters.askue": {
+        "type": "Project",
+        "dependencies": {
+          "BatteryEms.Application": "[1.0.0, )"
+        }
+      },
+      "batteryems.adapters.deyecloud": {
+        "type": "Project",
+        "dependencies": {
+          "BatteryEms.Application": "[1.0.0, )",
+          "BatteryEms.Domain": "[1.0.0, )"
+        }
+      },
+      "batteryems.adapters.entsoe": {
+        "type": "Project",
+        "dependencies": {
+          "BatteryEms.Application": "[1.0.0, )"
+        }
+      },
+      "batteryems.adapters.fusionsolar": {
+        "type": "Project",
+        "dependencies": {
+          "BatteryEms.Application": "[1.0.0, )",
+          "BatteryEms.Domain": "[1.0.0, )"
+        }
+      },
       "batteryems.adapters.modbus": {
         "type": "Project",
         "dependencies": {
@@ -419,6 +445,12 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.7, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.7, )",
           "OPCFoundation.NetStandard.Opc.Ua": "[1.5.378.134, )"
+        }
+      },
+      "batteryems.adapters.openmeteo": {
+        "type": "Project",
+        "dependencies": {
+          "BatteryEms.Application": "[1.0.0, )"
         }
       },
       "batteryems.adapters.optimization": {
@@ -489,10 +521,15 @@
       "batteryems.host": {
         "type": "Project",
         "dependencies": {
+          "BatteryEms.Adapters.Askue": "[1.0.0, )",
+          "BatteryEms.Adapters.DeyeCloud": "[1.0.0, )",
+          "BatteryEms.Adapters.Entsoe": "[1.0.0, )",
+          "BatteryEms.Adapters.FusionSolar": "[1.0.0, )",
           "BatteryEms.Adapters.Modbus": "[1.0.0, )",
           "BatteryEms.Adapters.Mqtt": "[1.0.0, )",
           "BatteryEms.Adapters.NativeInterop": "[1.0.0, )",
           "BatteryEms.Adapters.OpcUa": "[1.0.0, )",
+          "BatteryEms.Adapters.OpenMeteo": "[1.0.0, )",
           "BatteryEms.Adapters.Optimization": "[1.0.0, )",
           "BatteryEms.Adapters.OptimizationCore": "[1.0.0, )",
           "BatteryEms.Adapters.Persistence": "[1.0.0, )",

@@ -205,6 +205,32 @@
           "runtime.native.System.IO.Ports": "5.0.0"
         }
       },
+      "batteryems.adapters.askue": {
+        "type": "Project",
+        "dependencies": {
+          "BatteryEms.Application": "[1.0.0, )"
+        }
+      },
+      "batteryems.adapters.deyecloud": {
+        "type": "Project",
+        "dependencies": {
+          "BatteryEms.Application": "[1.0.0, )",
+          "BatteryEms.Domain": "[1.0.0, )"
+        }
+      },
+      "batteryems.adapters.entsoe": {
+        "type": "Project",
+        "dependencies": {
+          "BatteryEms.Application": "[1.0.0, )"
+        }
+      },
+      "batteryems.adapters.fusionsolar": {
+        "type": "Project",
+        "dependencies": {
+          "BatteryEms.Application": "[1.0.0, )",
+          "BatteryEms.Domain": "[1.0.0, )"
+        }
+      },
       "batteryems.adapters.modbus": {
         "type": "Project",
         "dependencies": {
@@ -234,6 +260,12 @@
           "BatteryEms.Application": "[1.0.0, )",
           "BatteryEms.Domain": "[1.0.0, )",
           "OPCFoundation.NetStandard.Opc.Ua": "[1.5.378.134, )"
+        }
+      },
+      "batteryems.adapters.openmeteo": {
+        "type": "Project",
+        "dependencies": {
+          "BatteryEms.Application": "[1.0.0, )"
         }
       },
       "batteryems.adapters.optimization": {

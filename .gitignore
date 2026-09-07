@@ -25,6 +25,8 @@ Thumbs.db
 
 # Tooling caches
 .nuget/
+.dotnet-x64/
+.tmp-pvlib/
 ~$*
 
 # Local environment

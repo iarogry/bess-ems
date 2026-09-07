@@ -10,6 +10,8 @@ BUILD_CONTEXT ?= .
 IMAGE_PREFIX ?= bess-ems
 BUILD_CONFIGURATION ?= Release
 DOCKER_BUILD_ARGS ?=
+DOCKER_BUILDER_RESERVED_SPACE ?= 4GB
+HEALTH_URL ?= http://127.0.0.1:8080/health
 HELM ?= helm
 HELM_CHART ?= deploy/helm/bess-ems
 
@@ -26,7 +28,7 @@ DOCKER_BUILD = $(DOCKER) build $(BUILD_CONTEXT) \
 	native-build test-native-interop test-native-parity \
 	native-lint native-sanitizer native-coverage-report native-coverage-gate native-coverage-exclusions \
 	simulator-test simulator-race simulator-lint simulator-coverage-gate \
-	build ci runtime fullbuild lock-refresh release-assets \
+	build docker-prune rebuild-runtime ci runtime fullbuild lock-refresh release-assets \
 	schema-validate schema-generate schema-drift-check \
 	helm-lint docs-check
 
@@ -40,6 +42,8 @@ help:
 	@echo "  IMAGE_PREFIX=$(IMAGE_PREFIX)"
 	@echo "  BUILD_CONFIGURATION=$(BUILD_CONFIGURATION)"
 	@echo "  DOCKER_BUILD_ARGS=$(DOCKER_BUILD_ARGS)"
+	@echo "  DOCKER_BUILDER_RESERVED_SPACE=$(DOCKER_BUILDER_RESERVED_SPACE)"
+	@echo "  HEALTH_URL=$(HEALTH_URL)"
 	@echo ""
 	@echo "Welle 1 (Foundation, active):"
 	@echo "  make lint        SOLID suppression audit + build with -warnaserror/code-metrics gate"
@@ -79,6 +83,8 @@ help:
 	@echo "  make native-coverage-exclusions Reject GCOVR exclusion markers in native src/ (RM-M3-09)"
 	@echo ""
 	@echo "Maintenance:"
+	@echo "  make docker-prune     Prune BuildKit cache to DOCKER_BUILDER_RESERVED_SPACE and dangling images"
+	@echo "  make rebuild-runtime  Prune cache, rebuild runtime image, restart compose stack"
 	@echo "  make lock-refresh    Refresh packages.lock.json files in Docker (per docs/user/quality.md §1.4)"
 	@echo "  make schema-validate      Validate schema/schema.yaml via d-migrate (RM-M2-MIG-02)"
 	@echo "  make schema-generate      Generate ?001_initial.sql from schema/schema.yaml (RM-M2-MIG-02)"
@@ -86,8 +92,8 @@ help:
 	@echo "  make helm-lint            Lint/render Kubernetes Helm chart (RM-M6-03)"
 	@echo ""
 	@echo "Welle 5 (Closure, active):"
-	@echo "  make build           Multi-stage runtime image (non-root, /health HEALTHCHECK)"
-	@echo "  make runtime         Compose-up + /health probe + down (depends on make build)"
+	@echo "  make build           Multi-stage chiseled runtime image (non-root, port 8080)"
+	@echo "  make runtime         Compose-up + host /health probe + down (depends on make build)"
 	@echo "  make test-container  Runtime smoke (alias for make runtime)"
 	@echo "  make ci              Sequential CI run of every M1 mandatory gate"
 	@echo "  make fullbuild       make ci + make build + make runtime (M1 closure)"
@@ -356,33 +362,40 @@ native-coverage-exclusions:
 
 # --- Welle 5 (partially active) --------------------------------------------
 
-# Runtime image: multi-stage publish + non-root aspnet image with /health
-# HEALTHCHECK (RM-M1-19b, LH-DEPLOY-001/003).
+# Runtime image: multi-stage publish + non-root chiseled aspnet image.
 build:
 	$(DOCKER_BUILD) --target runtime -t $(IMAGE_PREFIX)-runtime:latest
+
+# Docker Desktop hygiene for local rebuild loops. This keeps BuildKit's
+# reserved cache budget bounded while preserving volumes, including Postgres.
+docker-prune:
+	$(DOCKER) builder prune -f --reserved-space $(DOCKER_BUILDER_RESERVED_SPACE)
+	$(DOCKER) image prune -f
+
+# Local operator workflow: keep Docker Desktop storage bounded, rebuild only
+# the runtime target, then restart the production-shaped compose stack.
+rebuild-runtime: docker-prune build
+	$(SIMULATOR_MAKE) build
+	$(DOCKER) compose -f deploy/compose.yml up -d --wait --wait-timeout 60
+	@echo "[rebuild-runtime] stack is up; probing $(HEALTH_URL)"
+	curl --fail --silent --show-error $(HEALTH_URL)
+	$(MAKE) docker-prune
 
 # Compose smoke: bring the production-shaped stack up, poll /health, down.
 # Requires: `make build` (bess-ems image) and `make -C simulators/bess-field-sim build`
 # (bess-field-sim image). The target rebuilds them itself so a fresh
 # checkout reaches a healthy stack with one command.
 #
-# RM-M3-06 part 2: also verify libbattery_control_core.so is in place
-# at the runtime-image path NativeControlOptions.LibraryPath defaults
-# to (/app/native/libbattery_control_core.so) and that the dynamic
-# linker can resolve every dependency. The build-time ldd gate in
-# the Dockerfile already covers unresolved-deps failures; this
-# in-container check covers post-build mishaps (e.g. a volume mount
-# shadowing the path) and proves the production deployment shape
-# stays M3-D2-ready without enabling the routing yet.
+# RM-M3-06 part 2: native library ABI compatibility is verified at build
+# time in the verify-runtime-deps stage. The final chiseled runtime image
+# intentionally has no shell, curl, test, or ldd, so smoke probes run from
+# the host against the exposed HTTP endpoint.
 runtime: build
 	$(SIMULATOR_MAKE) build
 	$(DOCKER) compose -f deploy/compose.yml up -d --wait --wait-timeout 60
-	@echo "[runtime] stack is up; probing /health"
-	$(DOCKER) compose -f deploy/compose.yml exec -T bess-ems curl --fail --silent --show-error http://localhost:8080/health
-	@echo "[runtime] /health ok; verifying native control library is in place"
-	$(DOCKER) compose -f deploy/compose.yml exec -T bess-ems test -f /app/native/libbattery_control_core.so
-	$(DOCKER) compose -f deploy/compose.yml exec -T bess-ems sh -c 'ldd /app/native/libbattery_control_core.so > /tmp/ldd 2>&1; if grep -q "not found" /tmp/ldd; then cat /tmp/ldd >&2; exit 1; fi'
-	@echo "[runtime] native control library at /app/native/ resolves cleanly; tearing down"
+	@echo "[runtime] stack is up; probing $(HEALTH_URL)"
+	curl --fail --silent --show-error $(HEALTH_URL)
+	@echo "[runtime] /health ok; tearing down"
 	$(DOCKER) compose -f deploy/compose.yml down -v --remove-orphans
 
 # Container smoke: same as `runtime` but used as a gate target — the

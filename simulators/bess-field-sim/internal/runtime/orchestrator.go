@@ -52,19 +52,32 @@ func NoSleep(_ context.Context, _ time.Duration) error {
 	return nil
 }
 
+// Options controls replay behavior that is useful for long-running local
+// deployments while keeping deterministic one-shot replay as the default.
+type Options struct {
+	MqttHeartbeatInterval time.Duration
+}
+
 // Orchestrator wires modbus + mqtt + sleeper for one scenario run.
 type Orchestrator struct {
 	modbus  ModbusApplier
 	mqtt    MqttPublisher
 	sleeper Sleeper
+	options Options
 }
 
 // NewOrchestrator constructs an Orchestrator.
 func NewOrchestrator(modbus ModbusApplier, mqtt MqttPublisher, sleeper Sleeper) *Orchestrator {
+	return NewOrchestratorWithOptions(modbus, mqtt, sleeper, Options{})
+}
+
+// NewOrchestratorWithOptions constructs an Orchestrator with explicit replay
+// options.
+func NewOrchestratorWithOptions(modbus ModbusApplier, mqtt MqttPublisher, sleeper Sleeper, options Options) *Orchestrator {
 	if sleeper == nil {
 		sleeper = SleepWithContext
 	}
-	return &Orchestrator{modbus: modbus, mqtt: mqtt, sleeper: sleeper}
+	return &Orchestrator{modbus: modbus, mqtt: mqtt, sleeper: sleeper, options: options}
 }
 
 // Run walks scn.Telemetry, sleeping between snapshots according to
@@ -72,15 +85,7 @@ func NewOrchestrator(modbus ModbusApplier, mqtt MqttPublisher, sleeper Sleeper) 
 // called first, then mqtt.PublishSnapshot. Any publisher error
 // short-circuits the run; ctx cancellation interrupts the next sleep.
 func (o *Orchestrator) Run(ctx context.Context, scn model.Scenario) error {
-	var last int64
 	for i, snap := range scn.Telemetry {
-		delta := time.Duration(snap.OffsetMillis-last) * time.Millisecond
-		if i > 0 && delta > 0 {
-			if err := o.sleeper(ctx, delta); err != nil {
-				return err
-			}
-		}
-
 		if o.modbus != nil {
 			o.modbus.Apply(snap)
 		}
@@ -90,7 +95,39 @@ func (o *Orchestrator) Run(ctx context.Context, scn model.Scenario) error {
 			}
 		}
 
-		last = snap.OffsetMillis
+		if i+1 < len(scn.Telemetry) {
+			nextDelta := time.Duration(scn.Telemetry[i+1].OffsetMillis-snap.OffsetMillis) * time.Millisecond
+			if err := o.waitUntilNextTick(ctx, i, snap, nextDelta); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (o *Orchestrator) waitUntilNextTick(ctx context.Context, index int, snap model.TelemetrySnapshot, delta time.Duration) error {
+	if delta <= 0 {
+		return nil
+	}
+	if o.mqtt == nil || o.options.MqttHeartbeatInterval <= 0 {
+		return o.sleeper(ctx, delta)
+	}
+	remaining := delta
+	for remaining > 0 {
+		sleepFor := remaining
+		if sleepFor > o.options.MqttHeartbeatInterval {
+			sleepFor = o.options.MqttHeartbeatInterval
+		}
+		if err := o.sleeper(ctx, sleepFor); err != nil {
+			return err
+		}
+		remaining -= sleepFor
+		if remaining <= 0 {
+			return nil
+		}
+		if err := o.mqtt.PublishSnapshot(ctx, snap); err != nil {
+			return fmt.Errorf("publish heartbeat snapshot %d: %w", index, err)
+		}
 	}
 	return nil
 }

@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.7
 #
 # bess-field-sim — Go simulator (plan-RM-M1-simulator.md).
 # Docker-only workflow; no host Go toolchain required. Standard

@@ -1,3 +1,7 @@
+using BatteryEms.Adapters.Askue;
+using BatteryEms.Adapters.DeyeCloud;
+using BatteryEms.Adapters.Entsoe;
+using BatteryEms.Adapters.FusionSolar;
 using BatteryEms.Adapters.Modbus;
 using BatteryEms.Adapters.Mqtt;
 using BatteryEms.Adapters.NativeInterop;
@@ -34,6 +38,7 @@ namespace BatteryEms.Host;
 // the Optimization driven adapter. NoOp telemetry source / command sink
 // are the default for headless smokes — RM-M1-19c will swap in the
 // Modbus/MQTT adapters once the mapping loaders are wired.
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Maintainability", "CA1506", Justification = "Composition root intentionally wires every host adapter and cross-cutting service.")]
 public static class BessHostBuilder
 {
     public static WebApplication BuildApp(string[] args)
@@ -61,9 +66,15 @@ public static class BessHostBuilder
         builder.Host.ConfigureBessJsonLogging();
         ConfigureJson(builder.Services);
         builder.Services.AddOpenApi();
-        builder.Services.AddBessApplicationInMemoryStores();
+        builder.Services.AddBessApplicationInMemoryStores(
+            hostOptions.BatterySnapshotMaxAge,
+            hostOptions.SiteTelemetrySnapshotMaxAge);
         builder.Services.AddBessNativeControl(builder.Configuration);
         ConfigurePersistence(builder.Services, hostOptions);
+        ConfigurePriceSeriesSource(builder.Services, hostOptions);
+        ConfigureSiteTelemetry(builder.Services, hostOptions, runtimeConfig, builder.Configuration);
+        ConfigureSiteConsumption(builder.Services, hostOptions, runtimeConfig, builder.Configuration);
+        SolarForecastRegistration.Configure(builder.Services, hostOptions, runtimeConfig, builder.Configuration);
         ConfigureOptimization(builder.Services, hostOptions);
         builder.Services.AddBessTelemetry();
         builder.Services.AddBessTracing();
@@ -71,7 +82,7 @@ public static class BessHostBuilder
         {
             builder.Services.AddSingleton(runtimeConfig.SingleAsset);
         }
-        ConfigureIoAdapters(builder.Services, hostOptions, runtimeConfig);
+        ConfigureIoAdapters(builder.Services, hostOptions, runtimeConfig, builder.Configuration);
         builder.Services.AddBessWorker(builder.Configuration);
         builder.Services.AddApiTokenAuth(builder.Configuration);
         builder.Services.AddSingleton(runtimeConfig);
@@ -107,8 +118,17 @@ public static class BessHostBuilder
     private static void ConfigureIoAdapters(
         IServiceCollection services,
         BessHostOptions hostOptions,
-        BessRuntimeConfiguration runtimeConfig)
+        BessRuntimeConfiguration runtimeConfig,
+        ConfigurationManager configuration)
     {
+        if (string.Equals(hostOptions.TelemetrySource, "deye_cloud", StringComparison.OrdinalIgnoreCase))
+        {
+            EnsureDeyeCloudAssetCardinality(runtimeConfig);
+            services.AddDeyeCloudTelemetry(configuration, runtimeConfig.SingleAsset.AssetId);
+            services.AddSingleton<IBatteryCommandSink, NoOpBatteryCommandSink>();
+            return;
+        }
+
         var family = SelectIoAdapterFamily(hostOptions, runtimeConfig);
         EnsureIoAdapterAssetCardinality(family, runtimeConfig);
         switch (family)
@@ -134,6 +154,109 @@ public static class BessHostBuilder
                 services.AddSingleton<IBatteryCommandSink, NoOpBatteryCommandSink>();
                 break;
         }
+    }
+
+    private static void ConfigurePriceSeriesSource(IServiceCollection services, BessHostOptions hostOptions)
+    {
+        if (string.IsNullOrWhiteSpace(hostOptions.PriceSeriesSource))
+        {
+            return;
+        }
+
+        if (string.Equals(hostOptions.PriceSeriesSource, "entso-e", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(hostOptions.PriceSeriesSource, "entsoe", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(hostOptions.EntsoeApiToken)
+                || string.IsNullOrWhiteSpace(hostOptions.EntsoeDomainCode))
+            {
+                throw new InvalidOperationException(
+                    "Bess:PriceSeriesSource='entso-e' requires Bess:EntsoeApiToken and Bess:EntsoeDomainCode.");
+            }
+
+            var options = new EntsoePriceSeriesOptions
+            {
+                BaseUrl = hostOptions.EntsoeApiBaseUrl ?? new Uri("https://web-api.tp.entsoe.eu/api"),
+                SecurityToken = hostOptions.EntsoeApiToken!,
+                DomainCode = hostOptions.EntsoeDomainCode!,
+                RequestTimeout = hostOptions.EntsoeRequestTimeout ?? TimeSpan.FromSeconds(60),
+            };
+            services.AddSingleton(options);
+            services.AddSingleton<HttpClient>();
+            services.AddSingleton<IPriceSeriesSource, EntsoePriceSeriesSource>();
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Unsupported Bess:PriceSeriesSource '{hostOptions.PriceSeriesSource}'. Supported values: entso-e.");
+    }
+
+    private static void ConfigureSiteTelemetry(
+        IServiceCollection services,
+        BessHostOptions hostOptions,
+        BessRuntimeConfiguration runtimeConfig,
+        ConfigurationManager configuration)
+    {
+        if (string.IsNullOrWhiteSpace(hostOptions.SiteTelemetrySource))
+        {
+            return;
+        }
+
+        if (string.Equals(hostOptions.SiteTelemetrySource, "fusionsolar", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(hostOptions.SiteTelemetrySource, "fusion_solar", StringComparison.OrdinalIgnoreCase))
+        {
+            EnsureSiteTelemetryAssetCardinality(runtimeConfig);
+            services.AddFusionSolarSiteTelemetry(configuration, runtimeConfig.SingleAsset.AssetId);
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Unsupported Bess:SiteTelemetrySource '{hostOptions.SiteTelemetrySource}'. Supported values: fusionsolar.");
+    }
+
+    private static void ConfigureSiteConsumption(
+        IServiceCollection services,
+        BessHostOptions hostOptions,
+        BessRuntimeConfiguration runtimeConfig,
+        ConfigurationManager configuration)
+    {
+        if (string.IsNullOrWhiteSpace(hostOptions.ConsumptionSource))
+        {
+            return;
+        }
+
+        if (string.Equals(hostOptions.ConsumptionSource, "askue", StringComparison.OrdinalIgnoreCase))
+        {
+            EnsureSiteTelemetryAssetCardinality(runtimeConfig);
+            services.AddAskueSiteConsumption(configuration, runtimeConfig.SingleAsset.AssetId);
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Unsupported Bess:ConsumptionSource '{hostOptions.ConsumptionSource}'. Supported values: askue.");
+    }
+
+    private static void EnsureDeyeCloudAssetCardinality(BessRuntimeConfiguration runtimeConfig)
+    {
+        if (runtimeConfig.Assets.Count == 1)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            "Bess:TelemetrySource='deye_cloud' requires exactly one configured asset "
+            + "unless DeyeCloud:AssetId routing is extended for multi-asset use.");
+    }
+
+    private static void EnsureSiteTelemetryAssetCardinality(BessRuntimeConfiguration runtimeConfig)
+    {
+        if (runtimeConfig.Assets.Count == 1)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            "Bess:SiteTelemetrySource requires exactly one configured asset "
+            + "unless the site telemetry adapter is configured with explicit per-station asset routing.");
     }
 
     private static void EnsureIoAdapterAssetCardinality(
@@ -179,8 +302,13 @@ public static class BessHostBuilder
         _ = app.Services.GetRequiredService<ApiTokenRegistry>();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseOperatorUiStaticShell();
         app.MapOpenApi();
         app.MapBatteryEms();
+        app.MapSiteTelemetryStatus();
+        app.MapSiteData();
+        app.MapSitePvProfiles();
+        app.MapSolarForecasts();
         app.MapMetrics();
     }
 
@@ -230,6 +358,15 @@ public static class BessHostBuilder
                 }
                 solver.GapTolerance = options.GapTolerance;
                 solver.InitialSocPercent = options.InitialSocPercent;
+                if (options.DegradationCostPerKwhThroughput is { } degradationRate)
+                {
+                    solver.DegradationCost = new DegradationCostOptions
+                    {
+                        EurPerKwhThroughput = degradationRate,
+                        NominalCRate = options.DegradationNominalCRate,
+                        PiecewiseSegments = options.DegradationPiecewiseSegments ?? 8,
+                    };
+                }
             });
             return;
         }
@@ -367,6 +504,15 @@ public static class BessHostBuilder
                 }
                 solver.GapTolerance = solverOptions.GapTolerance;
                 solver.InitialSocPercent = solverOptions.InitialSocPercent;
+                if (solverOptions.DegradationCostPerKwhThroughput is { } degradationRate)
+                {
+                    solver.DegradationCost = new DegradationCostOptions
+                    {
+                        EurPerKwhThroughput = degradationRate,
+                        NominalCRate = solverOptions.DegradationNominalCRate,
+                        PiecewiseSegments = solverOptions.DegradationPiecewiseSegments ?? 8,
+                    };
+                }
             });
             return;
         }

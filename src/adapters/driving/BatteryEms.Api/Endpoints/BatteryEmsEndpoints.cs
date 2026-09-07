@@ -279,6 +279,7 @@ public static class BatteryEmsEndpoints
                 OptimizationRequestBody body,
                 IBatteryAssetRegistry assets,
                 IPriceSeriesSource priceSeriesSource,
+                IScheduleRepository schedules,
                 IScheduleOptimizationUseCase useCase,
                 CancellationToken ct) =>
             {
@@ -335,13 +336,18 @@ public static class BatteryEmsEndpoints
                 }
 
                 var outcome = await useCase.ExecuteAsync(command, ct).ConfigureAwait(false);
+                var economics = OptimizationEconomicsResponseBuilder.Build(
+                    command,
+                    schedules.FindActive(command.AssetId, command.ScheduleType),
+                    outcome.ProducedScheduleVersion);
                 return Results.Ok(new OptimizationResponse(
                     RunId: outcome.RunId,
                     Status: outcome.Status,
                     HorizonStart: command.HorizonStart,
                     HorizonEnd: command.HorizonEnd,
                     ProducedScheduleVersion: outcome.ProducedScheduleVersion,
-                    TerminationReason: outcome.TerminationReason));
+                    TerminationReason: outcome.TerminationReason,
+                    Economics: economics));
             })
             .RequireAuthorization(AuthConstants.OperatorPolicy)
             .WithName("DayAheadOptimize")

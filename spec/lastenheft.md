@@ -80,6 +80,7 @@ Das System muss mit folgenden externen Systemen interagieren können:
 - Wechselrichter
 - Netz- oder Standortzähler
 - PV-Erzeugungsmessung
+- Site-/Netzanschlussmessung, z. B. ASKUE/Zaehlerdaten
 - Marktpreisquellen
 - Fahrplanquellen
 - Regelleistungs-Aktivierungssignale
@@ -127,6 +128,10 @@ Das System bindet Batteriesysteme und zugehörige Feldgeräte über Modbus TCP, 
 | Native Core        | Performance-kritischer C/C++-Systemkern                         |
 | Constraint Limiter | Begrenzungslogik für technische Betriebsgrenzen                 |
 | Ramp Limiter       | Begrenzung der Änderungsgeschwindigkeit von Leistungssollwerten |
+| Site               | Logischer Standort mit einem oder mehreren BESS-Assets, PV-/Last-/Netzquellen und Netzanschluessen |
+| Site EMS           | Oberer Standort-Koordinationslayer; erzeugt zunaechst Berichte, Empfehlungen und spaeter freigegebene Steuerabsichten |
+| ASKUE              | Standort-/Zaehlerdatenquelle fuer Verbrauchs-, Bezugs- und Einspeisemesswerte |
+| RDN                | Day-Ahead-Marktpreisreihe im ukrainischen Marktumfeld |
 
 ### 4.1 Fachliche Konventionen
 
@@ -139,6 +144,14 @@ Das System muss eine einheitliche Vorzeichenkonvention für Wirkleistung verwend
 Alle Fahrpläne, Optimierungsergebnisse, Limiter, Commands, Persistenzdaten und Protokolladapter müssen diese Konvention intern verwenden. Abweichende Gerätekonventionen müssen ausschließlich in Protokolladaptern umgesetzt werden.
 
 **Abnahmekriterium:** Unit Tests weisen nach, dass SOC-Grenzen, Ramp Limiter und Protokolladapter die Vorzeichenkonvention konsistent anwenden.
+
+Site-level Daten verwenden dieselben Einheiten- und Zeitregeln, bleiben aber
+fachlich vom Batterie-Command-Pfad getrennt: `site_id` koordiniert Standortdaten,
+`asset_id` bleibt die Achse fuer Batterieschedules, Batterietelemetrie und
+Command Ownership.
+
+**Abnahmekriterium:** Site-/Zaehler-/PV-/Preis-Daten koennen einem `site_id`
+zugeordnet werden, ohne dass daraus automatisch ein Batterie-Command entsteht.
 
 ---
 
@@ -251,6 +264,24 @@ Performance-kritische Komponenten sollen optional über einen C/C++ Native Core 
 
 **Priorität:** Soll  
 **Abnahmekriterium:** Die .NET-Anwendung kann native Funktionen über eine stabile Schnittstelle verwenden oder durch eine .NET-Implementierung ersetzen.
+
+---
+
+### LH-ARCH-007 — Site-Level-Koordination ohne direkten Command-Pfad
+
+Site-level Funktionen muessen Standortdaten, Preise, PV-/Last-/Netzsignale und
+Batterie-Assets ueber Application-Use-Cases koordinieren, ohne Protokolladapter
+oder Optimierer zu einem direkten Steuerpfad zu machen.
+
+**Priorität:** Muss  
+**Beschreibung:** Der Site-Layer verwendet `site_id` fuer Standortkoordination
+und `asset_id` fuer Batteriebezuege. In der ersten Ausbaustufe erzeugt er
+Berichte, vorbereitete Werte, Empfehlungen und auditierbare Vorschlaege. Jede
+spaetere Steuerwirkung muss ueber bestehende Safety-, State-Machine-, Limiter-
+und Approval-Gates laufen.
+**Abnahmekriterium:** Tests oder Boundary-Regeln weisen nach, dass
+Site-/Orchestration-Code keine Adapterimplementierungen referenziert und keine
+Batterie-Commands direkt dispatcht.
 
 ---
 

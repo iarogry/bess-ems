@@ -37,6 +37,11 @@
     <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.OptimizationCore\BatteryEms.Adapters.OptimizationCore.csproj" />
     <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Persistence\BatteryEms.Adapters.Persistence.csproj" />
     <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Telemetry\BatteryEms.Adapters.Telemetry.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.DeyeCloud\BatteryEms.Adapters.DeyeCloud.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Entsoe\BatteryEms.Adapters.Entsoe.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.FusionSolar\BatteryEms.Adapters.FusionSolar.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Askue\BatteryEms.Adapters.Askue.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.OpenMeteo\BatteryEms.Adapters.OpenMeteo.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,10 @@
 using BatteryEms.Application.Api;
+using BatteryEms.Application.Forecasting;
 using BatteryEms.Application.Markets;
 using BatteryEms.Application.Optimization;
+using BatteryEms.Application.Orchestration;
 using BatteryEms.Application.Persistence;
+using BatteryEms.Application.Site;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -40,6 +43,18 @@ public static class PersistenceRegistration
         services.AddSingleton<IRetentionRepository, DapperRetentionRepository>();
         services.AddSingleton<IOptimizationRunRepository, DapperOptimizationRunRepository>();
         services.AddSingleton<IMpcRunRepository, DapperMpcRunRepository>();
+        services.AddSingleton<ISiteConsumptionStore, DapperSiteConsumptionStore>();
+        services.AddSingleton<ISiteMeasurementStore, DapperSiteMeasurementStore>();
+        services.AddSingleton<ISitePvProfileStore, DapperSitePvProfileStore>();
+        services.AddSingleton<ISolarForecastStore, DapperSolarForecastStore>();
+        services.AddSingleton<IOrchestrationRunStore, DapperOrchestrationRunStore>();
+        services.AddSingleton<IOrchestrationLockStore, DapperOrchestrationLockStore>();
+        services.AddSingleton<IDataBalanceStore, DapperDataBalanceStore>();
+        services.AddSingleton<DapperPriceSeriesStore>();
+        services.AddSingleton<IPriceSeriesSource>(
+            sp => sp.GetRequiredService<DapperPriceSeriesStore>());
+        services.AddSingleton<IPriceSeriesImportSink>(
+            sp => sp.GetRequiredService<DapperPriceSeriesStore>());
         // RM-M5-01-C step 4: ersetzt das InMemoryOptimizationIdempotency-
         // Store-Binding aus AddBessApplicationInMemoryStores durch die
         // Postgres-backed Variante (CAS via INSERT...ON CONFLICT +

@@ -26,5 +26,8 @@ public sealed class OperatorUiStaticFilesTests : IClassFixture<BatteryEmsApiFact
         var script = await client.GetStringAsync("/operator/app.js");
         Assert.Contains("/assets", script, StringComparison.Ordinal);
         Assert.Contains("/operator/stops/current", script, StringComparison.Ordinal);
+        Assert.Contains("/site/${encodeURIComponent(assetId)}/status", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("method: \"POST\"", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("authorization", script, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -98,6 +98,43 @@ func TestRun_SleepsByOffsetDelta(t *testing.T) {
 	}
 }
 
+func TestRun_WithMqttHeartbeatRepublishesLastSnapshotDuringLongGap(t *testing.T) {
+	t.Parallel()
+
+	scn := model.Scenario{
+		ID: "x", Name: "x",
+		Asset: model.BatteryAsset{AssetID: "a"},
+		Telemetry: []model.TelemetrySnapshot{
+			{OffsetMillis: 0, SocPercent: 60.5},
+			{OffsetMillis: 3000, SocPercent: 61.0},
+		},
+	}
+
+	sleeper := &captureSleeper{}
+	pub := &capturePublisher{}
+	o := runtime.NewOrchestratorWithOptions(
+		&captureModbus{},
+		pub,
+		sleeper.sleep,
+		runtime.Options{MqttHeartbeatInterval: time.Second})
+
+	if err := o.Run(context.Background(), scn); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if len(sleeper.durations) != 3 {
+		t.Fatalf("expected 3 one-second sleeps, got %d", len(sleeper.durations))
+	}
+	if len(pub.published) != 4 {
+		t.Fatalf("expected initial + 2 heartbeats + final publish, got %d", len(pub.published))
+	}
+	if pub.published[0].SocPercent != 60.5 || pub.published[1].SocPercent != 60.5 || pub.published[2].SocPercent != 60.5 {
+		t.Errorf("heartbeats should republish first snapshot, got %#v", pub.published[:3])
+	}
+	if pub.published[3].SocPercent != 61.0 {
+		t.Errorf("final publish should use second snapshot, got %v", pub.published[3].SocPercent)
+	}
+}
+
 func TestRun_PublisherErrorShortCircuits(t *testing.T) {
 	t.Parallel()
 

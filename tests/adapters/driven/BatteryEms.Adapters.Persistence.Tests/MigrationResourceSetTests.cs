@@ -24,7 +24,12 @@ public sealed class MigrationResourceSetTests
             .ToArray();
         Assert.NotEmpty(runOnce);
         Assert.Contains(runOnce, r => r.EndsWith(".0001_initial.sql", StringComparison.Ordinal));
-        Assert.Contains(runOnce, r => r.EndsWith(".0005_timescale_telemetry_hypertable.sql", StringComparison.Ordinal));
+        Assert.Contains(runOnce, r => r.EndsWith(".0006_price_series.sql", StringComparison.Ordinal));
+        Assert.Contains(runOnce, r => r.EndsWith(".0008_site_measurements.sql", StringComparison.Ordinal));
+        Assert.Contains(runOnce, r => r.EndsWith(".0009_site_pv_profiles.sql", StringComparison.Ordinal));
+        Assert.Contains(runOnce, r => r.EndsWith(".0010_solar_forecasts.sql", StringComparison.Ordinal));
+        Assert.Contains(runOnce, r => r.EndsWith(".0011_orchestration.sql", StringComparison.Ordinal));
+        Assert.Contains(runOnce, r => r.EndsWith(".0012_site_measurement_status_rows.sql", StringComparison.Ordinal));
     }
 
     [Fact]

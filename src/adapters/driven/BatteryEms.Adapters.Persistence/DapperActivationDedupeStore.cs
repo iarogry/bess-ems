@@ -51,7 +51,12 @@ public sealed partial class DapperActivationDedupeStore : IActivationDedupeStore
     // optional telemetry-only migration. It does not change the
     // dedupe table, but the compatibility ceiling still tracks every
     // applied RunOnce migration.
-    private const int LatestKnownMigrationNumber = 5;
+    //
+    // 12 ⇐ 0009-0012 add site/orchestration persistence tables and
+    // status-only measurement rows. They do not change the activation
+    // dedupe table, but a fully migrated database must not be rejected
+    // as an incompatible future checkpoint.
+    private const int LatestKnownMigrationNumber = 12;
 
     private const string InsertSql = """
         INSERT INTO regelleistung_activations

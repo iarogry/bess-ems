@@ -166,7 +166,7 @@ Case → Driven Ports → Driven Adapter**.
                   │           │             │
         ┌─────────▼──┐ ┌──────▼──────┐ ┌────▼─────────────┐
         │  Modbus    │ │   MQTT      │ │  Postgres /      │
-        │  OPC-UA    │ │   Mosquitto │ │  EF Core         │
+        │  OPC-UA    │ │   Mosquitto │ │  Dapper/DbUp     │
         │  Adapter   │ │   Adapter   │ │  Adapter         │
         └────────────┘ └─────────────┘ └──────────────────┘
                   │           │             │
@@ -313,20 +313,20 @@ Bezug: LH-ARCH-001..005, LH-NF-006/007/008.
 Die Modulnamen folgen der Verzeichnisstruktur aus §4.2. Die Spalte
 „Hexagon" ordnet jedes Modul der hexagonalen Klassifikation zu.
 Application-interne Funktionsbereiche (Realtime, Control, Markets,
-Optimization-Interface) leben innerhalb von `BatteryEms.Application` als
-Namespaces; eine spätere Aufspaltung in eigene .NET-Projekte ist optional
-(siehe AR-OPEN-008).
+Optimization-Interface, Site und Orchestration) leben innerhalb von
+`BatteryEms.Application` als Namespaces; eine spätere Aufspaltung in eigene
+.NET-Projekte ist trigger-basiert und nur nach ADR 0011 zulässig.
 
 | Modul                                    | Hexagon              | Verantwortung                                                | LH-Bezug             |
 | ---------------------------------------- | -------------------- | ------------------------------------------------------------ | -------------------- |
 | `BatteryEms.Domain`                      | Hexagon-Kern         | Entitäten, Wertobjekte, Vorzeichenkonvention, State Machine, Limiter | LH-DOM-*, LH-SM-*, LH-CTRL-002/003, §4.1 |
-| `BatteryEms.Application`                 | Hexagon-Application  | Use Cases, Driving + Driven Port-Interfaces, Snapshot Store, Markt-/Fahrplanauflösung, Optimierungs-Interface | LH-CTRL-001/007, LH-RT-*, LH-MKT-*, LH-OPT-001 |
+| `BatteryEms.Application`                 | Hexagon-Application  | Use Cases, Driving + Driven Port-Interfaces, Snapshot Store, Markt-/Fahrplanauflösung, Site-/Orchestration-Policies, Optimierungs-Interface | LH-CTRL-001/007, LH-RT-*, LH-MKT-*, LH-OPT-001 |
 | `BatteryEms.Api`                         | Driving Adapter      | REST-API, AuthN/AuthZ, Operator-Endpunkte, Audit             | LH-API-*             |
 | `BatteryEms.Worker`                      | Driving Adapter      | Hosted Service: Regelzyklus, Scheduler                       | LH-CTRL-001, LH-OPS-* |
 | `BatteryEms.Adapters.Modbus`             | Driven Adapter       | Modbus-TCP-Adapter (Lesen + Schreiben)                       | LH-MODB-*            |
 | `BatteryEms.Adapters.Mqtt`               | Driven Adapter       | MQTT-Telemetrie + Command-Publish                            | LH-MQTT-*            |
 | `BatteryEms.Adapters.OpcUa`              | Driven Adapter (M4)  | OPC-UA Lesen, Schreiben, Subscriptions                       | LH-OPCUA-*           |
-| `BatteryEms.Adapters.Persistence`        | Driven Adapter       | Repositories (EF Core/Dapper), Migrationen, Retention        | LH-PERSIST-*         |
+| `BatteryEms.Adapters.Persistence`        | Driven Adapter       | Dapper/Npgsql-Repositories, DbUp-Migrationen, Retention      | LH-PERSIST-*         |
 | `BatteryEms.Adapters.Telemetry`          | Driven Adapter       | OTel-Tracing, Prometheus-Metriken, Logging-Exporter          | LH-MON-*             |
 | `BatteryEms.Adapters.Optimization`       | Driven Adapter       | Solver-Bindings für Horizon-Optimierung; Schedule-Following-/Single-Step-Dispatch | LH-OPT-001..009 |
 | `BatteryEms.Adapters.NativeInterop`      | Driven Adapter (M3)  | P/Invoke-Bindings, ABI-Check, Fallback-Routing               | LH-NATIVE-*          |

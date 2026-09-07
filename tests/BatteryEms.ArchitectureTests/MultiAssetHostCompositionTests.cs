@@ -14,6 +14,8 @@ public sealed class MultiAssetHostCompositionTests
         [
             $"--Bess:SchemaDirectory={RepoPath("config", "schema")}",
             $"--Bess:AssetConfigPath={RepoPath("config", "examples", "assets.multi-bess.json")}",
+            "--Bess:TelemetrySource=",
+            "--Bess:PriceSeriesSource=",
         ]);
 
         var registry = app.Services.GetRequiredService<IBatteryAssetRegistry>();
@@ -33,6 +35,8 @@ public sealed class MultiAssetHostCompositionTests
             [
                 $"--Bess:SchemaDirectory={RepoPath("config", "schema")}",
                 $"--Bess:AssetConfigPath={RepoPath("config", "examples", "assets.multi-bess.json")}",
+                "--Bess:TelemetrySource=",
+                "--Bess:PriceSeriesSource=",
                 $"--Bess:ModbusMappingPath={RepoPath("config", "examples", "adapters", "modbus.simulator.json")}",
                 "--Bess:ModbusHost=127.0.0.1",
                 "--Bess:ModbusPort=1502",
@@ -49,6 +53,8 @@ public sealed class MultiAssetHostCompositionTests
         [
             $"--Bess:SchemaDirectory={RepoPath("config", "schema")}",
             $"--Bess:AssetConfigPath={RepoPath("config", "examples", "asset.single-bess.json")}",
+            "--Bess:TelemetrySource=",
+            "--Bess:PriceSeriesSource=",
             $"--Bess:MqttMappingPath={RepoPath("config", "examples", "adapters", "mqtt.simulator.json")}",
             "--Bess:MqttBrokerHost=127.0.0.1",
             "--Bess:MqttBrokerPort=1883",
@@ -70,6 +76,8 @@ public sealed class MultiAssetHostCompositionTests
             [
                 $"--Bess:SchemaDirectory={RepoPath("config", "schema")}",
                 $"--Bess:AssetConfigPath={RepoPath("config", "examples", "asset.single-bess.json")}",
+                "--Bess:TelemetrySource=",
+                "--Bess:PriceSeriesSource=",
                 $"--Bess:MqttMappingPath={RepoPath("config", "examples", "adapters", "mqtt.simulator.json")}",
                 "--Bess:MqttBrokerHost=127.0.0.1",
                 "--Bess:MqttBrokerPort=1883",
@@ -87,6 +95,8 @@ public sealed class MultiAssetHostCompositionTests
             [
                 $"--Bess:SchemaDirectory={RepoPath("config", "schema")}",
                 $"--Bess:AssetConfigPath={RepoPath("config", "examples", "asset.single-bess.json")}",
+                "--Bess:TelemetrySource=",
+                "--Bess:PriceSeriesSource=",
                 $"--Bess:MqttMappingPath={RepoPath("config", "examples", "adapters", "mqtt.simulator.json")}",
                 "--Bess:MqttBrokerHost=127.0.0.1",
                 "--Bess:MqttBrokerPort=1883",
@@ -107,6 +117,8 @@ public sealed class MultiAssetHostCompositionTests
         [
             $"--Bess:SchemaDirectory={RepoPath("config", "schema")}",
             $"--Bess:AssetConfigPath={RepoPath("config", "examples", "asset.single-bess.json")}",
+            "--Bess:TelemetrySource=",
+            "--Bess:PriceSeriesSource=",
             $"--Bess:MqttMappingPath={RepoPath("config", "examples", "adapters", "mqtt.simulator.json")}",
             "--Bess:MqttBrokerHost=127.0.0.1",
             "--Bess:MqttBrokerPort=1883",

@@ -156,6 +156,12 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "batteryems.adapters.entsoe": {
+        "type": "Project",
+        "dependencies": {
+          "BatteryEms.Application": "[1.0.0, )"
+        }
+      },
       "batteryems.adapters.optimization": {
         "type": "Project",
         "dependencies": {

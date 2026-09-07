@@ -1,12 +1,11 @@
 namespace BatteryEms.Adapters.Optimization.OrTools;
 
-// RM-M2-04: linear throughput proxy for LH-OPT-004 "Batteriealterungskosten".
-// EUR per kWh of energy passing through the battery (charge + discharge
-// each contribute their absolute value because both stress the cells).
-// The proxy is an LP-friendly approximation — real cycle-life models are
-// nonlinear (Arrhenius / Wöhler) and would push the optimisation into
-// MILP territory; M2 stays LP and operators calibrate this single rate
-// from their cycle-life datasheet.
+// RM-M2-04: throughput proxy for LH-OPT-004 "Batteriealterungskosten".
+// Currency per kWh of energy passing through the battery (charge +
+// discharge each contribute their absolute value because both stress
+// the cells). By default this is linear. When NominalCRate is set, the
+// rate is interpreted at that nominal C-rate and a convex piecewise-LP
+// approximation makes per-kWh degradation grow with power/current.
 //
 // Setting `EurPerKwhThroughput = 0` keeps the component active in the
 // objective breakdown (so dashboards see a zero entry instead of a
@@ -14,6 +13,8 @@ namespace BatteryEms.Adapters.Optimization.OrTools;
 public sealed record DegradationCostOptions
 {
     public required double EurPerKwhThroughput { get; init; }
+    public double? NominalCRate { get; init; }
+    public int PiecewiseSegments { get; init; } = 8;
 
     public DegradationCostOptions EnsureValid()
     {
@@ -23,6 +24,20 @@ public sealed record DegradationCostOptions
                 nameof(EurPerKwhThroughput),
                 EurPerKwhThroughput,
                 "EurPerKwhThroughput must be finite and non-negative.");
+        }
+        if (NominalCRate is { } nominal && (!double.IsFinite(nominal) || nominal <= 0))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(NominalCRate),
+                NominalCRate,
+                "NominalCRate must be finite and positive when set.");
+        }
+        if (PiecewiseSegments <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(PiecewiseSegments),
+                PiecewiseSegments,
+                "PiecewiseSegments must be positive.");
         }
         return this;
     }

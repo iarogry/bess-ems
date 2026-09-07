@@ -1,7 +1,5 @@
-# syntax=docker/dockerfile:1.7
-
 ARG DOTNET_SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0
-ARG DOTNET_RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0
+ARG DOTNET_RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled
 ARG PYTHON_IMAGE=python:3.12-slim
 ARG BUILD_CONFIGURATION=Release
 
@@ -324,8 +322,23 @@ RUN cmake -S native/battery_control_core -B /build/native \
  && ctest --test-dir /build/native --output-on-failure
 
 # ---------------------------------------------------------------------------
-# runtime: minimal aspnet-only image, non-root user, port 8080,
-# Container HEALTHCHECK against /health (LH-DEPLOY-001/002, LH-NF-004).
+# verify-runtime-deps: checks the native library against a standard runtime
+# base to ensure ABI compatibility before moving to the chiseled image.
+# ---------------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS verify-runtime-deps
+WORKDIR /verify
+COPY --from=native-build /build/native/libbattery_control_core.so .
+RUN ldd libbattery_control_core.so > /tmp/ldd-out 2>&1 \
+ && if grep -q "not found" /tmp/ldd-out; then \
+        echo "[verify-runtime-deps] native control library has unresolved dependencies:" >&2; \
+        cat /tmp/ldd-out >&2; \
+        exit 1; \
+    fi
+
+# ---------------------------------------------------------------------------
+# runtime: ultra-minimal chiseled image, non-root user, port 8080.
+# (LH-DEPLOY-001/002, LH-NF-004). Healthchecks should be handled by the
+# orchestrator (e.g. K8s liveness/readiness) as chiseled images lack curl.
 # ---------------------------------------------------------------------------
 FROM ${DOTNET_RUNTIME_IMAGE} AS runtime
 ENV DOTNET_NOLOGO=true \
@@ -334,39 +347,16 @@ ENV DOTNET_NOLOGO=true \
     ASPNETCORE_URLS=http://0.0.0.0:8080 \
     ASPNETCORE_ENVIRONMENT=Production
 WORKDIR /app
-# curl is needed for the container HEALTHCHECK; aspnet:10.0 ships a
-# slim Debian base without it.
-RUN apt-get update \
- && apt-get install --yes --no-install-recommends curl \
- && rm -rf /var/lib/apt/lists/*
 COPY --from=publish --chown=app:app /publish /app
 COPY --chown=app:app config/ /app/config/
 # RM-M3-06 part 2: drop the native control library at the path the
 # host's NativeControlOptions.LibraryPath default
-# (/app/native/libbattery_control_core.so) expects. The .so is built
-# in the `native-build` stage on the .NET SDK image, which shares
-# the Ubuntu 24.04 (Noble) base of dotnet/aspnet:10.0 — ABI is
-# aligned by construction (see the native-build stage rationale).
-# NativeControl remains opt-in (Enabled=false default); the
-# production routing activation is M3-D2's scope. The build-time
-# ldd check below fails the image build if a future PID/state slice
-# introduces an unresolved transitive dependency the runtime image
-# does not ship.
-COPY --from=native-build --chown=app:app /build/native/libbattery_control_core.so /app/native/libbattery_control_core.so
-RUN ldd /app/native/libbattery_control_core.so > /tmp/ldd-out 2>&1 \
- && if grep -q "not found" /tmp/ldd-out; then \
-        echo "[runtime] native control library has unresolved dependencies:" >&2; \
-        cat /tmp/ldd-out >&2; \
-        exit 1; \
-    fi \
- && rm /tmp/ldd-out
-# Non-root runtime: aspnet:10.0 already ships an "app" user (UID 1654)
-# precisely for this purpose; reusing it keeps the image small and
-# avoids fighting the base image's reserved UIDs.
+# (/app/native/libbattery_control_core.so) expects. Compatibility is
+# verified in the verify-runtime-deps stage.
+COPY --from=verify-runtime-deps --chown=app:app /verify/libbattery_control_core.so /app/native/libbattery_control_core.so
+# Non-root runtime: chiseled images already ship an "app" user (UID 1654).
 USER app:app
 EXPOSE 8080
-HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
-    CMD curl --fail --silent --show-error http://localhost:8080/health || exit 1
 ENTRYPOINT ["dotnet", "BatteryEms.Host.dll"]
 
 # ---------------------------------------------------------------------------
@@ -392,14 +382,9 @@ ENV DOTNET_NOLOGO=true \
     BESS_TEST_SIDECAR_GRPC_PORT=8081 \
     BESS_TEST_SIDECAR_HEALTH_PORT=8082
 WORKDIR /app
-RUN apt-get update \
- && apt-get install --yes --no-install-recommends curl \
- && rm -rf /var/lib/apt/lists/*
 COPY --from=optimization-core-test-sidecar-publish --chown=app:app /publish-test-sidecar /app
 USER app:app
 EXPOSE 8081 8082
-HEALTHCHECK --interval=5s --timeout=2s --start-period=5s --retries=10 \
-    CMD curl --fail --silent --show-error http://localhost:8082/healthz || exit 1
 ENTRYPOINT ["dotnet", "BatteryEms.OptimizationCore.TestSidecar.dll"]
 
 # ---------------------------------------------------------------------------

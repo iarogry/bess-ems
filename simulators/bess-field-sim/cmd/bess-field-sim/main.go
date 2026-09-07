@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/pt9912/bess-ems/simulators/bess-field-sim/internal/modbus"
 	"github.com/pt9912/bess-ems/simulators/bess-field-sim/internal/model"
@@ -21,7 +22,10 @@ import (
 	"github.com/pt9912/bess-ems/simulators/bess-field-sim/internal/scenario"
 )
 
-const defaultModbusAddr = ":5020"
+const (
+	defaultModbusAddr            = ":5020"
+	defaultMqttHeartbeatInterval = 5 * time.Second
+)
 
 type cliFlags struct {
 	scenarioPath    string
@@ -30,14 +34,15 @@ type cliFlags struct {
 	mqttMapping     string
 	mqttBroker      string
 	mqttClientID    string
+	mqttHeartbeat   time.Duration
 	assetIDOverride string
 }
 
 type outputs struct {
-	modbus  *modbus.Server
-	mqtt    *mqtt.Publisher
-	client  *mqtt.PahoClient
-	cmdAck  *mqtt.CommandHandler
+	modbus *modbus.Server
+	mqtt   *mqtt.Publisher
+	client *mqtt.PahoClient
+	cmdAck *mqtt.CommandHandler
 }
 
 func parseFlags(args []string) (cliFlags, error) {
@@ -49,6 +54,7 @@ func parseFlags(args []string) (cliFlags, error) {
 	fs.StringVar(&f.mqttMapping, "mqtt-mapping", "", "path to MQTT mapping JSON; enables MQTT publishing when set together with -mqtt-broker")
 	fs.StringVar(&f.mqttBroker, "mqtt-broker", "", "MQTT broker URL (e.g. tcp://localhost:1883)")
 	fs.StringVar(&f.mqttClientID, "mqtt-client-id", "bess-field-sim", "MQTT client identifier")
+	fs.DurationVar(&f.mqttHeartbeat, "mqtt-heartbeat-interval", defaultMqttHeartbeatInterval, "republish the last MQTT telemetry snapshot during long scenario gaps; 0 disables heartbeat")
 	fs.StringVar(&f.assetIDOverride, "asset-id", "", "override asset_id from scenario for MQTT topic substitution")
 	if err := fs.Parse(args); err != nil {
 		return cliFlags{}, fmt.Errorf("parse flags: %w", err)
@@ -74,6 +80,7 @@ func run(args []string) error {
 		"name", scn.Name,
 		"asset", scn.Asset.AssetID,
 		"telemetry_ticks", len(scn.Telemetry),
+		"mqtt_heartbeat_interval", flags.mqttHeartbeat,
 	)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -103,7 +110,7 @@ func run(args []string) error {
 		slog.Warn("no Modbus mapping and no MQTT mapping/broker — running scenario without IO")
 	}
 
-	o := io.orchestrator()
+	o := io.orchestrator(flags)
 	if err := o.Run(ctx, scn); err != nil {
 		if errors.Is(err, context.Canceled) {
 			slog.Info("scenario canceled", "id", scn.ID)
@@ -119,16 +126,17 @@ func (o outputs) hasIO() bool {
 	return o.modbus != nil || o.mqtt != nil
 }
 
-func (o outputs) orchestrator() *runtime.Orchestrator {
+func (o outputs) orchestrator(flags cliFlags) *runtime.Orchestrator {
+	options := runtime.Options{MqttHeartbeatInterval: flags.mqttHeartbeat}
 	switch {
 	case o.modbus != nil && o.mqtt != nil:
-		return runtime.NewOrchestrator(o.modbus, o.mqtt, runtime.SleepWithContext)
+		return runtime.NewOrchestratorWithOptions(o.modbus, o.mqtt, runtime.SleepWithContext, options)
 	case o.modbus != nil:
-		return runtime.NewOrchestrator(o.modbus, nil, runtime.SleepWithContext)
+		return runtime.NewOrchestratorWithOptions(o.modbus, nil, runtime.SleepWithContext, options)
 	case o.mqtt != nil:
-		return runtime.NewOrchestrator(nil, o.mqtt, runtime.SleepWithContext)
+		return runtime.NewOrchestratorWithOptions(nil, o.mqtt, runtime.SleepWithContext, options)
 	default:
-		return runtime.NewOrchestrator(nil, nil, runtime.SleepWithContext)
+		return runtime.NewOrchestratorWithOptions(nil, nil, runtime.SleepWithContext, options)
 	}
 }
 

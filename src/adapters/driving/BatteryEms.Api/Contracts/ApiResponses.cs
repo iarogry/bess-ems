@@ -22,6 +22,161 @@ public sealed record BatteryStatusResponse(
     CommandView? LastCommand);
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SiteStatusResponse(
+    string AssetId,
+    SiteTelemetryView? Telemetry,
+    DataQualityView? Quality,
+    DateTimeOffset? ObservedAt);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SolarForecastResponse(
+    string AssetId,
+    string Source,
+    string Model,
+    DateTimeOffset GeneratedAt,
+    DateTimeOffset HorizonStart,
+    DateTimeOffset HorizonEnd,
+    double TimeStepSeconds,
+    double InstalledDcKw,
+    double InstalledAcKw,
+    IReadOnlyList<SolarForecastPointView> Points);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SitePvProfilesResponse(
+    string SiteId,
+    IReadOnlyList<SitePvProfileResponse> Profiles);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SiteMeasurementsResponse(
+    string SiteId,
+    DateTimeOffset From,
+    DateTimeOffset To,
+    IReadOnlyList<SiteMeasurementView> Measurements);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SiteMeasurementView(
+    string Source,
+    string InstrumentType,
+    string InstrumentId,
+    string InstrumentName,
+    DateTimeOffset Timestamp,
+    double? IntervalSeconds,
+    string Metric,
+    double? Value,
+    string Unit,
+    string Quality);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SiteConsumptionResponse(
+    string SiteId,
+    DateTimeOffset From,
+    DateTimeOffset To,
+    IReadOnlyList<SiteConsumptionView> Readings);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SiteConsumptionView(
+    string Source,
+    string PointId,
+    string PointName,
+    DateTimeOffset Timestamp,
+    double? IntervalSeconds,
+    double? Apoz,
+    double? Aneg,
+    double? Ppoz,
+    double? Pneg);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SiteBalanceResponse(
+    string SiteId,
+    DateTimeOffset From,
+    DateTimeOffset To,
+    string DataQualityStatus,
+    double MainGridImportKwh,
+    double MainGridExportKwh,
+    double SubconsumerConsumptionKwh,
+    double OwnConsumptionKwh,
+    double DerivedExportFromNegativeConsumptionKwh,
+    double GridImportKwh,
+    double GridExportKwh,
+    double SiteNetBalanceKwh,
+    IReadOnlyList<SiteGenerationBalanceView> Generation,
+    IReadOnlyList<SiteBalanceWarningView> Warnings,
+    IReadOnlyList<SiteBalanceMeterTotalView> MeterTotals);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SiteGenerationBalanceView(
+    string GenerationType,
+    double AuxiliaryConsumptionKwh,
+    double ExportKwh,
+    double NetGenerationKwh);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SiteBalanceWarningView(
+    string Code,
+    string Message,
+    string? MeterId,
+    string? GenerationType);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SiteBalanceMeterTotalView(
+    string MeterId,
+    string Name,
+    string Role,
+    string? GenerationType,
+    double ValueMultiplier,
+    double? ApozRaw,
+    double? AnegRaw,
+    double? ApozKwh,
+    double? AnegKwh,
+    int ReadingCount);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SitePvProfileResponse(
+    string SiteId,
+    string PvSystemId,
+    string Name,
+    string ForecastAssetId,
+    bool Enabled,
+    double Latitude,
+    double Longitude,
+    double TiltDegrees,
+    double AzimuthDegrees,
+    double InstalledDcKw,
+    double InverterAcKw,
+    double TemperatureCoefficientPerDegree,
+    double SystemLossFraction,
+    int ForecastHorizonHours,
+    int ForecastResolutionMinutes,
+    string ForecastProvider,
+    string ForecastEngine,
+    string? Notes)
+{
+    public static SitePvProfileResponse From(BatteryEms.Application.Site.SitePvProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        return new(
+            profile.SiteId,
+            profile.PvSystemId,
+            profile.Name,
+            profile.ForecastAssetId,
+            profile.Enabled,
+            profile.Latitude,
+            profile.Longitude,
+            profile.TiltDegrees,
+            profile.AzimuthDegrees,
+            profile.InstalledDcKw,
+            profile.InverterAcKw,
+            profile.TemperatureCoefficientPerDegree,
+            profile.SystemLossFraction,
+            profile.ForecastHorizonHours,
+            profile.ForecastResolutionMinutes,
+            profile.ForecastProvider,
+            profile.ForecastEngine,
+            profile.Notes);
+    }
+}
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public sealed record AssetsResponse(IReadOnlyList<AssetView> Assets);
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -234,6 +389,25 @@ public sealed record PriceSeriesImportRequestBody(
     IReadOnlyList<double> Values);
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record UpsertSitePvProfileRequest(
+    string Name,
+    string ForecastAssetId,
+    bool Enabled,
+    double Latitude,
+    double Longitude,
+    double TiltDegrees,
+    double AzimuthDegrees,
+    double InstalledDcKw,
+    double InverterAcKw,
+    double TemperatureCoefficientPerDegree,
+    double SystemLossFraction,
+    int ForecastHorizonHours,
+    int ForecastResolutionMinutes,
+    string ForecastProvider,
+    string ForecastEngine,
+    string? Notes = null);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public sealed record PriceSeriesImportResponse(
     string MarketBidArea,
     string Product,
@@ -252,7 +426,106 @@ public sealed record OptimizationResponse(
     DateTimeOffset HorizonStart,
     DateTimeOffset HorizonEnd,
     int? ProducedScheduleVersion,
-    string TerminationReason);
+    string TerminationReason,
+    ScheduleEconomicsView? Economics = null);
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record ScheduleEconomicsView(
+    string PriceUnit,
+    string Currency,
+    double TotalCost,
+    double TotalRevenue,
+    double TotalLossesKwh,
+    double NetProfit,
+    IReadOnlyList<ScheduleEconomicsStepView> Steps)
+{
+    public static ScheduleEconomicsView From(BatteryEms.Application.Optimization.ScheduleEconomicsReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+        return new(
+            report.PriceUnit,
+            report.Currency,
+            report.TotalCost,
+            report.TotalRevenue,
+            report.TotalLossesKwh,
+            report.NetProfit,
+            report.Steps.Select(ScheduleEconomicsStepView.From).ToArray());
+    }
+}
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SiteTelemetryView(
+    DateTimeOffset Timestamp,
+    double? PvPowerKw,
+    double? LoadPowerKw,
+    double? GridPowerKw,
+    double? IrradianceWPerSquareMeter)
+{
+    public static SiteTelemetryView From(BatteryEms.Application.Realtime.SiteTelemetry telemetry)
+    {
+        ArgumentNullException.ThrowIfNull(telemetry);
+        return new(
+            Timestamp: telemetry.Timestamp,
+            PvPowerKw: telemetry.PvPowerKw,
+            LoadPowerKw: telemetry.LoadPowerKw,
+            GridPowerKw: telemetry.GridPowerKw,
+            IrradianceWPerSquareMeter: telemetry.IrradianceWPerSquareMeter);
+    }
+}
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record SolarForecastPointView(
+    DateTimeOffset Timestamp,
+    double PowerKw,
+    double IrradianceWPerSquareMeter,
+    double AmbientTemperatureCelsius,
+    double WindSpeedMetersPerSecond,
+    int CloudCoverPercent)
+{
+    public static SolarForecastPointView From(BatteryEms.Application.Forecasting.SolarForecastPoint point)
+    {
+        ArgumentNullException.ThrowIfNull(point);
+        return new(
+            point.Timestamp,
+            point.PowerKw,
+            point.IrradianceWPerSquareMeter,
+            point.AmbientTemperatureCelsius,
+            point.WindSpeedMetersPerSecond,
+            point.CloudCoverPercent);
+    }
+}
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public sealed record ScheduleEconomicsStepView(
+    DateTimeOffset Start,
+    DateTimeOffset End,
+    double Price,
+    double TargetPowerKw,
+    double EnergyMwh,
+    double BatteryEnergyDeltaKwh,
+    double LossesKwh,
+    double Cost,
+    double Revenue,
+    double NetProfit,
+    double CumulativeNetProfit)
+{
+    public static ScheduleEconomicsStepView From(BatteryEms.Application.Optimization.ScheduleEconomicsStep step)
+    {
+        ArgumentNullException.ThrowIfNull(step);
+        return new(
+            step.Start,
+            step.End,
+            step.Price,
+            step.TargetPowerKw,
+            step.EnergyMwh,
+            step.BatteryEnergyDeltaKwh,
+            step.LossesKwh,
+            step.Cost,
+            step.Revenue,
+            step.NetProfit,
+            step.CumulativeNetProfit);
+    }
+}
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public sealed record OptimizationRunResponse(
