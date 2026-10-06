@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "1.0.0",
+  "target_date": "2026-09-23",
+  "timeZone": "Europe/Kyiv",
+  "planStatus": "Blocked",
+  "payloadReady": false,
+  "requiresLivePrewrite": false,
+  "executionStatus": "blocked",
+  "planningOnly": true,
+  "sourceMetadata": {
+    "provider": "OREE",
+    "market": "DAM",
+    "zone": "IPS",
+    "monthSelected": "09.2026",
+    "targetRow": "23.09.2026",
+    "currency": "UAH/MWh",
+    "hourCount": 24,
+    "missingSlots": 0,
+    "duplicateSlots": 0,
+    "officialXls": "tmp/bess-deye-daily/oree-DAM-IPS-202609-target-20260923-1501.xls",
+    "fileSizeBytes": 518656
+  },
+  "telemetry": {
+    "singleReadOnlyPoll": true,
+    "expectedInverterCount": 2,
+    "onlineInverterCount": 2,
+    "telemetryFreshnessLimitSeconds": 600,
+    "freshnessSeconds": [176.482, 204.482],
+    "fresh": true,
+    "slaveConfigTouCalled": false
+  },
+  "optimization": {
+    "optimizerAvailable": true,
+    "status": "OPTIMAL",
+    "capacityKwh": 694.3168,
+    "expectedStartSocPercent": 30.0,
+    "liveSnapshotSocPercent": 99.5,
+    "solverObjectiveIncludingDeterministicTieBreak": -8156.443212,
+    "hourlyActionsRecorded": true
+  },
+  "blockedReasons": [
+    {
+      "code": "TOU_WINDOW_CARDINALITY_CONFLICT",
+      "severity": "critical",
+      "message": "The optimal 24-hour trajectory requires seven contiguous settings runs in Z2 (gray, discharge, discharge, discharge, idle, charge, gray), but the runbook requires exactly six intervals covering the full day. Reducing to six would shift settings across an hourly boundary or change the optimized actions, so no executable payload was synthesized."
+    }
+  ],
+  "validation": {
+    "reportJsonReadable": true,
+    "reportSanitized": true,
+    "containsStationId": false,
+    "containsDeviceSerial": false,
+    "containsSecretsOrTokens": false,
+    "executablePayloadAbsent": true,
+    "noDeyeWriteCalled": true
+  },
+  "writeOperations": {
+    "orderSysTouUpdateCalled": false,
+    "orderSysTouSwitchCalled": false,
+    "otherDeyeWriteCalled": false,
+    "masterChanged": false,
+    "slaveChanged": false
+  }
+}

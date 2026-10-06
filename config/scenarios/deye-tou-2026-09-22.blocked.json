@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "artifactType": "sanitized_blocked_report",
+  "target_date": "2026-09-22",
+  "deliveryDate": "2026-09-22",
+  "timeZone": "Europe/Kyiv",
+  "priceSource": "OREE_DAM_IPS",
+  "planStatus": "Blocked",
+  "executableScenarioCreated": false,
+  "payloadReady": false,
+  "executionStatus": "blocked_stale_telemetry",
+  "requiresLivePrewrite": true,
+  "planningOnly": true,
+  "sourceMetadata": {
+    "provider": "OREE",
+    "market": "DAM",
+    "zone": "IPS",
+    "monthSelected": "09.2026",
+    "targetRow": "22.09.2026",
+    "currency": "UAH/MWh",
+    "workbookCurrencyLabel": "грн./МВт·год",
+    "expectedHourCount": 24,
+    "allowedDstHourCounts": [23, 24, 25],
+    "actualHourCount": 24,
+    "missingSlots": 0,
+    "duplicateSlots": 0,
+    "targetCompleteRowCount": 1,
+    "officialXls": "tmp/bess-deye-daily/oree-DAM-IPS-202609-target-20260922-1501.xls",
+    "officialEndpoint": "https://www.oree.com.ua/index.php/pricectr/get_file",
+    "contentType": "application/vnd.ms-excel",
+    "fileSizeBytes": 518656,
+    "sheet": "Ціна_РДН"
+  },
+  "bmsSnapshot": {
+    "source": "single read-only Deye planning poll",
+    "collectedAtUtc": "2026-09-21T12:01:29.2531853Z",
+    "inverterCount": 2,
+    "expectedInverterCount": 2,
+    "allExpectedInvertersOnline": true,
+    "telemetryFresh": false,
+    "telemetryFreshnessLimitSeconds": 300,
+    "telemetryFreshnessSeconds": [507.253, 228.253],
+    "telemetryCollectionTimesUtc": ["2026-09-21T11:53:02Z", "2026-09-21T11:57:41Z"],
+    "metricCounts": [124, 124],
+    "bmsVoltageV": 558.9,
+    "bmsSocChannelsPercent": [100, 100, 100, 100],
+    "rawMeanSocPercent": 100,
+    "reportedBatteryRatedCapacityAh": 300,
+    "energyCapacityFormula": "current master BMSVoltage x 4 x 314 / 1000",
+    "energyCapacityKwh": 701.7984
+  },
+  "qualityChecks": {
+    "targetDateMatchesRequestedNextLocalDate": true,
+    "monthBoundaryHandledWithTargetMonth": true,
+    "priceCurrencyIsUahPerMwh": true,
+    "expectedEuropeKyivHourCount": 24,
+    "targetPriceRowPresent": true,
+    "priceSeriesComplete": true,
+    "priceMissingSlots": 0,
+    "priceDuplicateSlots": 0,
+    "exactlyTwoExpectedInverters": true,
+    "bothInvertersOnline": true,
+    "bothInverterTelemetryFresh": false,
+    "masterBmsSnapshotComplete": true,
+    "masterBaselineRead": true,
+    "slaveTouReadSkipped": true
+  },
+  "blockedReasons": [
+    {
+      "code": "DEYE_TELEMETRY_STALE",
+      "severity": "critical",
+      "message": "Master device/latest telemetry age was 507.253 s, exceeding the 300-second freshness guard."
+    }
+  ],
+  "optimization": {
+    "performed": false,
+    "reason": "Optimization is not materialized because required master telemetry is stale."
+  },
+  "touWindows": [],
+  "validation": {
+    "reportJsonReadable": true,
+    "reportSanitized": true,
+    "containsStationId": false,
+    "containsDeviceSerial": false,
+    "containsSecretsOrTokens": false,
+    "executablePayloadAbsent": true
+  },
+  "writeOperations": {
+    "orderSysTouUpdateCalled": false,
+    "orderSysTouSwitchCalled": false,
+    "otherDeyeWriteCalled": false,
+    "masterChanged": false,
+    "slaveChanged": false
+  }
+}

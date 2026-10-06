@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "1.1.0",
+  "target_date": "2026-09-24",
+  "timeZone": "Europe/Kyiv",
+  "priceSource": "OREE_DAM_IPS",
+  "planStatus": "Blocked",
+  "payloadReady": false,
+  "executionStatus": "blocked",
+  "requiresLivePrewrite": false,
+  "planningOnly": true,
+  "sourceMetadata": {
+    "provider": "OREE",
+    "market": "DAM",
+    "zone": "IPS",
+    "monthSelected": "09.2026",
+    "targetRow": "24.09.2026",
+    "currency": "UAH/MWh",
+    "officialXls": "tmp/bess-deye-daily/oree-DAM-IPS-202609-target-20260923-1501.xls",
+    "fileSizeBytes": 518656,
+    "expectedHours": 24,
+    "completeDaysInWorkbook": 23,
+    "targetCompleteRowCount": 0,
+    "missingSlots": 24,
+    "duplicateSlots": 0
+  },
+  "bmsSnapshot": {
+    "source": "single read-only Deye planning poll",
+    "telemetryFreshnessLimitSeconds": 600,
+    "telemetryFresh": true,
+    "inverterCount": 2,
+    "expectedInverterCount": 2,
+    "allExpectedInvertersOnline": true,
+    "masterBmsVoltageV": 539.3,
+    "bmsSocChannelsPercent": [96, 96, 97, 96],
+    "liveSnapshotSocPercent": 96.25,
+    "energyCapacityKwh": 677.3608,
+    "masterConfigTouRead": true,
+    "slaveConfigTouRead": false,
+    "telemetryAgesSeconds": [343.421, 62.421]
+  },
+  "blockedReasons": [
+    {
+      "code": "OREE_DAM_TARGET_ROW_MISSING",
+      "severity": "critical",
+      "message": "The official September 2026 OREE DAM/IPS workbook was parsed with the required 24-hour horizon; complete rows exist for days 1-23, but the exact 24.09.2026 target row is absent. No complete price vector is available, so optimization and executable payload synthesis were not performed."
+    }
+  ],
+  "validation": {
+    "reportJsonReadable": true,
+    "reportSanitized": true,
+    "containsStationId": false,
+    "containsDeviceSerial": false,
+    "containsSecretsOrTokens": false,
+    "executablePayloadAbsent": true,
+    "noDeyeWriteCalled": true
+  },
+  "writeOperations": {
+    "orderSysTouUpdateCalled": false,
+    "orderSysTouSwitchCalled": false,
+    "otherDeyeWriteCalled": false,
+    "masterChanged": false,
+    "slaveChanged": false
+  }
+}

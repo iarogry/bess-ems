@@ -1,0 +1,358 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "1.3.0",
+  "target_date": "2026-10-05",
+  "timeZone": "Europe/Kyiv",
+  "status": "blocked",
+  "payloadReady": false,
+  "executionStatus": "blocked",
+  "requiresLivePrewrite": true,
+  "reasonCode": "NO_FUTURE_TOU_ACTIVATIONS",
+  "reason": "At recovery request time all four standard activation times had passed. Runbook requires safe gray-zone baseline for missed windows and prohibits retroactive actions, so no executable TOU payload was created.",
+  "metadata": {
+    "recoveryMode": true,
+    "planningRequestObservedAtUtc": "2026-10-05T16:21:30Z",
+    "planningRequestObservedAtLocal": "2026-10-05T19:21:30+03:00",
+    "snapshotTimeUtc": "2026-10-05T19:24:30.4670681+03:00",
+    "recoveryStartHour": 20,
+    "missedActivationWindows": [
+      {
+        "id": "Z1",
+        "activateAt": "2026-10-04T23:55:00+03:00"
+      },
+      {
+        "id": "Z2",
+        "activateAt": "2026-10-05T05:55:00+03:00"
+      },
+      {
+        "id": "Z3",
+        "activateAt": "2026-10-05T11:55:00+03:00"
+      },
+      {
+        "id": "Z4",
+        "activateAt": "2026-10-05T17:55:00+03:00"
+      }
+    ],
+    "futureActivationWindows": []
+  },
+  "sourceMetadata": {
+    "provider": "OREE",
+    "market": "DAM",
+    "zone": "IPS",
+    "monthSelected": "10.2026",
+    "targetRow": "05.10.2026",
+    "currency": "UAH/MWh",
+    "hourCount": 24,
+    "uniqueTargetRow": true,
+    "missingSlots": 0,
+    "duplicateSlots": 0,
+    "dstScaleHours": 24,
+    "attachedWorkbook": "price_DAM_IDM_10.2026 (3).xls",
+    "attachedWorkbookSha256": "8500E0E5F04D98AC67154F4BCD9776C800AAC554D3F2B6CD75D047D10E98918B",
+    "officialPage": "https://www.oree.com.ua/index.php/pricectr",
+    "hourlyPricesUahMwh": [
+      3000.0,
+      799.99,
+      149.0,
+      499.99,
+      500.0,
+      2800.0,
+      5470.0,
+      10000.0,
+      8000.0,
+      4500.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      1480.0,
+      6200.0,
+      8500.0,
+      11042.8,
+      10000.0,
+      8000.0,
+      7000.0,
+      5650.0
+    ]
+  },
+  "bmsSnapshot": {
+    "collectedAtUtc": "2026-10-05T19:24:30.4670681+03:00",
+    "freshnessLimitSeconds": 600,
+    "telemetryAgesSeconds": [
+      156,
+      54
+    ],
+    "inverterCount": 2,
+    "bothOnline": true,
+    "allTelemetryFresh": true,
+    "masterBmsVoltageV": 522.5,
+    "bmsSocChannelsPercent": [
+      68.0,
+      71.0,
+      65.0,
+      66.0
+    ],
+    "liveMeanSocPercent": 67.5,
+    "planningCapacityKwh": 656.26,
+    "masterTouBaselineRead": true,
+    "slaveTouBaselineRead": false
+  },
+  "optimization": {
+    "status": "OPTIMAL",
+    "startHour": 20,
+    "inputSha256": "B946AF8F4D8E3BE8A3F251DD314282F9176D7DF79E8B0E047D414D1C3015DA9D",
+    "outputSha256": "712E0F42F1390FEF9F1C3F14B44D94A8710062F1A23F5C844C352D25A81F18CF",
+    "efficiency": 0.95,
+    "initialSocPercent": 67.5,
+    "minimumSocPercent": 30,
+    "maximumSocPercent": 100,
+    "netMarginUah": 2190.3409952503553,
+    "executablePayloadOmitted": true,
+    "omissionReason": "All activation windows missed; remaining-hour optimization is advisory only."
+  },
+  "hourlyActions": [
+    {
+      "hour": 0,
+      "time": "00:00",
+      "priceUahMwh": 3000.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 1,
+      "time": "01:00",
+      "priceUahMwh": 799.99,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 2,
+      "time": "02:00",
+      "priceUahMwh": 149.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 3,
+      "time": "03:00",
+      "priceUahMwh": 499.99,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 4,
+      "time": "04:00",
+      "priceUahMwh": 500.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 5,
+      "time": "05:00",
+      "priceUahMwh": 2800.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 6,
+      "time": "06:00",
+      "priceUahMwh": 5470.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 7,
+      "time": "07:00",
+      "priceUahMwh": 10000.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 8,
+      "time": "08:00",
+      "priceUahMwh": 8000.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 9,
+      "time": "09:00",
+      "priceUahMwh": 4500.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 10,
+      "time": "10:00",
+      "priceUahMwh": 10.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 11,
+      "time": "11:00",
+      "priceUahMwh": 10.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 12,
+      "time": "12:00",
+      "priceUahMwh": 10.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 13,
+      "time": "13:00",
+      "priceUahMwh": 10.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 14,
+      "time": "14:00",
+      "priceUahMwh": 10.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 15,
+      "time": "15:00",
+      "priceUahMwh": 10.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 16,
+      "time": "16:00",
+      "priceUahMwh": 1480.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 17,
+      "time": "17:00",
+      "priceUahMwh": 6200.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 18,
+      "time": "18:00",
+      "priceUahMwh": 8500.0,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 19,
+      "time": "19:00",
+      "priceUahMwh": 11042.8,
+      "action": "elapsed_not_planned",
+      "chargeKw": 0,
+      "dischargeKw": 0,
+      "socStartPercent": null,
+      "socEndPercent": null
+    },
+    {
+      "hour": 20,
+      "time": "20:00",
+      "priceUahMwh": 10000.0,
+      "action": "discharge",
+      "chargeKw": 0.0,
+      "dischargeKw": 160.0,
+      "socStartPercent": 67.5,
+      "socEndPercent": 41.83623066595877
+    },
+    {
+      "hour": 21,
+      "time": "21:00",
+      "priceUahMwh": 8000.0,
+      "action": "discharge",
+      "chargeKw": 0.0,
+      "dischargeKw": 73.79262500000004,
+      "socStartPercent": 41.83623066595877,
+      "socEndPercent": 30.0
+    },
+    {
+      "hour": 22,
+      "time": "22:00",
+      "priceUahMwh": 7000.0,
+      "action": "idle",
+      "chargeKw": 0.0,
+      "dischargeKw": 0.0,
+      "socStartPercent": 30.0,
+      "socEndPercent": 30.0
+    },
+    {
+      "hour": 23,
+      "time": "23:00",
+      "priceUahMwh": 5650.0,
+      "action": "idle",
+      "chargeKw": 0.0,
+      "dischargeKw": 0.0,
+      "socStartPercent": 30.0,
+      "socEndPercent": 30.0
+    }
+  ],
+  "deyeWriteCommandsCalled": false
+}

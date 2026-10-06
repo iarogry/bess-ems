@@ -1,0 +1,233 @@
+{
+  "schemaVersion": 1,
+  "artifactType": "sanitized_blocked_report",
+  "target_date": "2026-09-15",
+  "deliveryDate": "2026-09-15",
+  "timeZone": "Europe/Kyiv",
+  "priceSource": "OREE_DAM_IPS",
+  "planStatus": "Blocked",
+  "executableScenarioCreated": false,
+  "payloadReady": false,
+  "executionStatus": "blocked_source_incomplete",
+  "requiresLivePrewrite": true,
+  "planningOnly": true,
+  "createdAtUtc": "2026-09-14T05:56:53.8622924Z",
+  "sourceMetadata": {
+    "provider": "OREE",
+    "market": "DAM",
+    "zone": "IPS",
+    "monthSelected": "09.2026",
+    "targetRow": "15.09.2026",
+    "currency": "UAH/MWh",
+    "workbookCurrencyLabel": "грн./МВт·год",
+    "expectedHourCount": 24,
+    "allowedDstHourCounts": [
+      23,
+      24,
+      25
+    ],
+    "actualHourCount": 0,
+    "missingSlots": 24,
+    "duplicateSlots": 0,
+    "targetCompleteRowCount": 0,
+    "availableCompleteDays": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "officialXls": "tmp/bess-deye-daily/oree-DAM-IPS-202609-target-20260915.xls",
+    "officialEndpoint": "https://www.oree.com.ua/index.php/pricectr/get_file",
+    "contentType": "application/vnd.ms-excel",
+    "fileSizeBytes": 515584,
+    "sheet": "Ціна_РДН"
+  },
+  "bmsSnapshot": {
+    "source": "single read-only Deye planning poll",
+    "collectedAtUtc": "2026-09-14T05:56:53.8622924Z",
+    "inverterCount": 2,
+    "expectedInverterCount": 2,
+    "allExpectedInvertersOnline": true,
+    "telemetryFresh": true,
+    "telemetryFreshnessSeconds": [
+      157.862,
+      183.862
+    ],
+    "telemetryCollectionTimesUtc": [
+      "2026-09-14T05:54:16Z",
+      "2026-09-14T05:53:50Z"
+    ],
+    "metricCounts": [
+      124,
+      124
+    ],
+    "masterAlias": "inverter_1",
+    "bmsVoltageV": 523.1,
+    "bmsVoltageChannelsV": [
+      523.1,
+      525.3,
+      523.4,
+      523.6
+    ],
+    "bmsSocChannelsPercent": [
+      20,
+      33,
+      20,
+      20
+    ],
+    "rawMeanSocPercent": 23.25,
+    "initialSocMethod": "arithmetic mean of four fresh BMSSOC channels, clipped to 30-100%",
+    "initialSocPercent": 30,
+    "reportedBatteryRatedCapacityAh": 300,
+    "planningRatedCapacityAhPerString": 314,
+    "parallelBmsStringCount": 4,
+    "energyCapacityFormula": "current master BMSVoltage x 4 x 314 / 1000",
+    "energyCapacityKwh": 657.0136,
+    "masterBatteryPowerKw": 0.5,
+    "slaveBatteryPowerKw": 0.38
+  },
+  "limits": {
+    "parallelInverterCount": 2,
+    "ratedCapacityAhPerString": 314,
+    "aggregateChargeLimitKw": 160,
+    "aggregateDischargeLimitKw": 160,
+    "masterTouPowerLimitKw": 80,
+    "masterTouPowerLimitW": 80000,
+    "minimumSocPercent": 30,
+    "upsReserveSocPercent": 30,
+    "maximumSocPercent": 100,
+    "chargeEfficiency": 0.95,
+    "dischargeEfficiency": 0.95
+  },
+  "baseline": {
+    "masterTouReadPerformed": true,
+    "slaveTouReadPerformed": false,
+    "masterTouReadable": true,
+    "masterTouAction": "off",
+    "masterTouSlotCount": 6,
+    "masterBatteryReadable": true,
+    "masterSystemReadable": true,
+    "masterTouRaw": [
+      {
+        "time": "18:00",
+        "enableGeneration": true,
+        "enableGridCharge": false,
+        "enableSell": null,
+        "power": 80000,
+        "soc": 30,
+        "voltage": 290
+      },
+      {
+        "time": "19:00",
+        "enableGeneration": true,
+        "enableGridCharge": false,
+        "enableSell": null,
+        "power": 0,
+        "soc": 90,
+        "voltage": 290
+      },
+      {
+        "time": "20:00",
+        "enableGeneration": true,
+        "enableGridCharge": false,
+        "enableSell": null,
+        "power": 63670,
+        "soc": 20,
+        "voltage": 290
+      },
+      {
+        "time": "22:00",
+        "enableGeneration": true,
+        "enableGridCharge": false,
+        "enableSell": null,
+        "power": 80000,
+        "soc": 20,
+        "voltage": 290
+      },
+      {
+        "time": "23:00",
+        "enableGeneration": true,
+        "enableGridCharge": false,
+        "enableSell": null,
+        "power": 0,
+        "soc": 20,
+        "voltage": 290
+      },
+      {
+        "time": "00:00",
+        "enableGeneration": true,
+        "enableGridCharge": false,
+        "enableSell": null,
+        "power": 0,
+        "soc": 20,
+        "voltage": 290
+      }
+    ],
+    "masterBattery": {
+      "battCapacityAh": 314,
+      "battLowCapacityPercent": 20,
+      "battShutdownCapacityPercent": 5,
+      "maxChargeCurrentA": 80,
+      "maxDischargeCurrentA": 80
+    },
+    "masterSystem": {
+      "maxSellPowerW": 320000,
+      "maxSolarPowerW": 88000,
+      "zeroExportPowerW": 100
+    },
+    "slaveTouNote": "config/tou was intentionally not called for the slave; code 2106001 is not treated as a link error"
+  },
+  "qualityChecks": {
+    "targetDateMatchesRequestedNextLocalDate": true,
+    "monthBoundaryHandledWithTargetMonth": true,
+    "priceCurrencyIsUahPerMwh": true,
+    "expectedEuropeKyivHourCount": 24,
+    "targetPriceRowPresent": false,
+    "priceSeriesComplete": false,
+    "priceMissingSlots": 24,
+    "priceDuplicateSlots": 0,
+    "exactlyTwoExpectedInverters": true,
+    "bothInvertersOnline": true,
+    "bothInverterTelemetryFresh": true,
+    "masterBmsSnapshotComplete": true,
+    "masterBaselineRead": true,
+    "slaveTouReadSkipped": true
+  },
+  "blockedReasons": [
+    {
+      "code": "OREE_DAM_TARGET_ROW_MISSING",
+      "severity": "critical",
+      "message": "The official OREE DAM/IPS workbook for September 2026 contains complete rows only for days 1-14; the 15.09.2026 row is absent."
+    }
+  ],
+  "optimization": {
+    "performed": false,
+    "reason": "A complete authoritative 24-hour DAM price series is required before optimization."
+  },
+  "touWindows": [],
+  "validation": {
+    "reportJsonReadable": true,
+    "reportSanitized": true,
+    "containsStationId": false,
+    "containsDeviceSerial": false,
+    "containsSecretsOrTokens": false,
+    "executablePayloadAbsent": true
+  },
+  "writeOperations": {
+    "orderSysTouUpdateCalled": false,
+    "orderSysTouSwitchCalled": false,
+    "otherDeyeWriteCalled": false,
+    "masterChanged": false,
+    "slaveChanged": false
+  }
+}

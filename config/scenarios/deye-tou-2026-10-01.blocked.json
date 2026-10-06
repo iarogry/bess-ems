@@ -1,0 +1,41 @@
+{
+  "artifactType": "sanitized_blocked_report",
+  "schemaVersion": 1,
+  "contractVersion": "1.1.0",
+  "targetDate": "2026-10-01",
+  "generatedAt": "2026-09-30T06:02:38.167Z",
+  "planningOnly": true,
+  "payloadReady": false,
+  "executionStatus": "blocked_source_incomplete",
+  "requiresLivePrewrite": true,
+  "sourceValidation": {
+    "oree": {
+      "market": "DAM",
+      "zone": "IPS",
+      "monthSelected": "10.2026",
+      "currencyExpected": "UAH/MWh",
+      "targetRowPresent": false,
+      "targetHourCount": 0,
+      "requiredHourScale": "23/24/25 Europe/Kyiv"
+    },
+    "deyePlanningPoll": {
+      "completed": true,
+      "readOnly": true,
+      "telemetryFreshnessLimitSeconds": 600,
+      "inverterCount": 2,
+      "expectedInverterCount": 2,
+      "allExpectedInvertersOnline": true,
+      "telemetryFresh": true,
+      "masterTouBaselineReadable": true,
+      "slaveTouRead": false
+    }
+  },
+  "blockedReasons": [
+    "OREE_TARGET_DATE_ROW_UNAVAILABLE"
+  ],
+  "deyeWriteCalls": {
+    "touUpdate": false,
+    "touSwitch": false,
+    "other": false
+  }
+}
