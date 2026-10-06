@@ -30,7 +30,7 @@ var prices = await new OreePriceFileSource(new HttpClient()).LoadAsync(request, 
 // Aggregate the BMS strings behind both parallel inverters into one dispatchable BESS.
 // SOC and voltage are supplied from the read-only master-inverter telemetry poll.
 var capacityKwh = parallelStringCount * batteryVoltageV * ratedCapacityAhPerString / 1000;
-var asset = new BatteryAsset("BESS-parallel", capacityKwh, 160, 160, 20, 90, .95, .95, 160, -20, 55);
+var asset = new BatteryAsset("BESS-parallel", capacityKwh, 160, 160, 30, 100, .95, .95, 160, -20, 55);
 var command = new ScheduleOptimizationCommand(asset.AssetId, ScheduleType.DayAhead, asset, start, end, TimeSpan.FromHours(1), prices.Values, prices.Unit);
 var result = await new OrToolsScheduleOptimizer(new ScheduleSolverOptions { InitialSocPercent = initialSocPercent }, new Clock(), NullLogger<OrToolsScheduleOptimizer>.Instance).OptimizeAsync(new ScheduleOptimizationRequest(command, "UA-IPS", 0), CancellationToken.None);
 Console.WriteLine($"date={today:yyyy-MM-dd}; soc_start={initialSocPercent:F1}%; voltage_v={batteryVoltageV:F2}; capacity_kwh={asset.CapacityKwh:F2}; prices={prices.StepCount}; status={result.Run.Status}; objective={result.Run.ObjectiveValue:F2}");

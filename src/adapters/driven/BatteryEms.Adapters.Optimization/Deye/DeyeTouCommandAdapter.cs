@@ -42,8 +42,9 @@ public sealed class DeyeTouCommandAdapter : IDeyeTouCommandAdapter
     private readonly Uri _resultEndpoint;
     private readonly string _masterSerial;
     private readonly bool _writeEnabled;
+    private readonly bool _includeEnableSell;
 
-    public DeyeTouCommandAdapter(HttpClient http, Uri baseUri, string masterSerial, bool writeEnabled = false)
+    public DeyeTouCommandAdapter(HttpClient http, Uri baseUri, string masterSerial, bool writeEnabled = false, bool includeEnableSell = true)
     {
         _http = http ?? throw new ArgumentNullException(nameof(http));
         _updateEndpoint = new Uri(baseUri, "order/sys/tou/update");
@@ -51,16 +52,36 @@ public sealed class DeyeTouCommandAdapter : IDeyeTouCommandAdapter
         _resultEndpoint = new Uri(baseUri, "order/");
         _masterSerial = string.IsNullOrWhiteSpace(masterSerial) ? throw new ArgumentException("Master serial is required.", nameof(masterSerial)) : masterSerial;
         _writeEnabled = writeEnabled;
+        _includeEnableSell = includeEnableSell;
     }
 
     public async Task<string> UpdateAsync(string deviceSn, IReadOnlyList<DeyeTouInterval> intervals, DeyeTouGuardState guards, CancellationToken cancellationToken)
     {
         EnsureWritable(deviceSn, guards);
-        ValidateIntervals(intervals);
-        using var response = await _http.PostAsJsonAsync(_updateEndpoint, new { deviceSn, timeUseSettingItems = intervals }, cancellationToken).ConfigureAwait(false);
+        var deviceIntervals = ToDevicePayload(intervals);
+        object items = _includeEnableSell
+            ? deviceIntervals
+            : deviceIntervals.Select(x => new { x.Time, x.EnableGeneration, x.EnableGridCharge, x.Power, x.Soc, x.Voltage }).ToArray();
+        using var response = await _http.PostAsJsonAsync(_updateEndpoint, new { deviceSn, timeUseSettingItems = items }, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// API time is the start of the interval. Preserve time/settings pairs.
+    /// Midnight is rotated last without shifting settings to another boundary.
+    /// </summary>
+    public static IReadOnlyList<DeyeTouInterval> ToDevicePayload(IReadOnlyList<DeyeTouInterval> intervals)
+    {
+        ValidateIntervals(intervals);
+        return intervals
+            .Skip(1)
+            .Append(intervals[0])
+            .ToArray();
+    }
+
+    public static bool PowerMatches(int observed, int requested) =>
+        requested >= 0 && (observed == requested || observed == requested / 10 * 10);
 
     public async Task<string> SwitchAsync(string deviceSn, bool enabled, DeyeTouGuardState guards, CancellationToken cancellationToken)
     {
@@ -73,7 +94,7 @@ public sealed class DeyeTouCommandAdapter : IDeyeTouCommandAdapter
     public async Task<DeyeOrderResult> WaitForResultAsync(string orderId, TimeSpan timeout, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(orderId)) throw new ArgumentException("orderId is required.", nameof(orderId));
-        if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout, TimeSpan.Zero);
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(timeout);
         var delay = TimeSpan.FromSeconds(1);
