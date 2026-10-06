@@ -82,8 +82,8 @@ public sealed class DeyeCloudAuthenticationHandler : DelegatingHandler
 
     private static string Sha256Lower(string value)
     {
-        if (value.Length == 64 && value.All(Uri.IsHexDigit)) return value.ToLowerInvariant();
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
+        if (value.Length == 64 && value.All(Uri.IsHexDigit)) return Convert.ToHexStringLower(Convert.FromHexString(value));
+        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
     }
 
     private static string? FindString(JsonElement root, string name)

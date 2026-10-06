@@ -78,11 +78,6 @@
           "Json.More.Net": "3.0.1"
         }
       },
-      "Microsoft.OpenApi": {
-        "type": "Transitive",
-        "resolved": "2.0.0",
-        "contentHash": "GGYLfzV/G/ct80OZ45JxnWP7NvMX1BCugn/lX7TH5o0lcVaviavsLMTxmFV2AybXWjbi3h6FF1vgZiTK6PXndw=="
-      },
       "Newtonsoft.Json": {
         "type": "Transitive",
         "resolved": "13.0.4",
@@ -273,6 +268,7 @@
         "dependencies": {
           "BatteryEms.Application": "[1.0.0, )",
           "BatteryEms.Domain": "[1.0.0, )",
+          "ExcelDataReader": "[3.8.0, )",
           "Google.OrTools": "[9.15.6755, )",
           "osqp-net": "[1.0.0.2, )"
         }
@@ -364,6 +360,12 @@
           "dbup-core": "6.1.1"
         }
       },
+      "ExcelDataReader": {
+        "type": "CentralTransitive",
+        "requested": "[3.8.0, )",
+        "resolved": "3.8.0",
+        "contentHash": "kbUsldc5Fn9IKgzL2nr4VvN/mKqPqn8zGXUZpA7uL6svCA4psF+qMK519EhMvderpU4pAJoqk9DWpiSIkiZtXA=="
+      },
       "FluentModbus": {
         "type": "CentralTransitive",
         "requested": "[5.3.2, )",
@@ -419,6 +421,12 @@
         "dependencies": {
           "Microsoft.OpenApi": "2.0.0"
         }
+      },
+      "Microsoft.OpenApi": {
+        "type": "CentralTransitive",
+        "requested": "[2.7.5, )",
+        "resolved": "2.7.5",
+        "contentHash": "0FA67RSnRM4tcBKqiqVu/HPdZ9+QOKbmeRjxRUGTCjPU4C0bmUhd97Dso7Yild5P7nOV6GxJ2xrK0Kv/O9xp0w=="
       },
       "MQTTnet": {
         "type": "CentralTransitive",

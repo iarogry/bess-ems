@@ -102,8 +102,7 @@
       "batteryems.adapters.entsoe": {
         "type": "Project",
         "dependencies": {
-          "BatteryEms.Application": "[1.0.0, )",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.7, )"
+          "BatteryEms.Application": "[1.0.0, )"
         }
       },
       "batteryems.application": {

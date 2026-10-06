@@ -23,6 +23,7 @@ public sealed class OreePriceFileSource
 
     public async Task<PriceSeries> LoadAsync(PriceSeriesRequest request, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
         request = request.EnsureValid();
         if (request.TimeStep != TimeSpan.FromHours(1))
             throw new NotSupportedException("OREE export is hourly; TimeStep must be 1 hour.");
@@ -37,12 +38,15 @@ public sealed class OreePriceFileSource
             ["market_type"] = _options.MarketType,
             ["zone"] = _options.Zone
         });
-        using var response = await _http.PostAsync(_options.Endpoint, content, cancellationToken).ConfigureAwait(false);
+        using var response = await _http.PostAsync(new Uri(_options.Endpoint), content, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        var values = OreeXlsParser.Parse(stream, checked((int)(request.HorizonEnd - request.HorizonStart).TotalHours), TimeZoneInfo.ConvertTime(request.HorizonStart, kyiv).Day);
-        return new PriceSeries(request.MarketBidArea, request.Product, request.PriceKind,
-            "UAH/MWh", "OREE", request.HorizonStart, request.HorizonEnd, request.TimeStep, values);
+        var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        await using (stream.ConfigureAwait(false))
+        {
+            var values = OreeXlsParser.Parse(stream, checked((int)(request.HorizonEnd - request.HorizonStart).TotalHours), TimeZoneInfo.ConvertTime(request.HorizonStart, kyiv).Day);
+            return new PriceSeries(request.MarketBidArea, request.Product, request.PriceKind,
+                "UAH/MWh", "OREE", request.HorizonStart, request.HorizonEnd, request.TimeStep, values);
+        }
     }
 }
 
@@ -51,7 +55,7 @@ public static class OreeXlsParser
     public static IReadOnlyList<double> Parse(Stream source, int expectedCount, int targetDay)
     {
         ArgumentNullException.ThrowIfNull(source);
-        if (expectedCount <= 0) throw new ArgumentOutOfRangeException(nameof(expectedCount));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(expectedCount);
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
         using var workbook = ExcelReaderFactory.CreateBinaryReader(source);
         var rows = new List<double[]>();

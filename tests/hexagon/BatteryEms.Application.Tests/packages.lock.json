@@ -143,6 +143,7 @@
         "dependencies": {
           "BatteryEms.Application": "[1.0.0, )",
           "BatteryEms.Domain": "[1.0.0, )",
+          "ExcelDataReader": "[3.8.0, )",
           "Google.OrTools": "[9.15.6755, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.7, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.7, )",
@@ -159,6 +160,12 @@
       },
       "batteryems.domain": {
         "type": "Project"
+      },
+      "ExcelDataReader": {
+        "type": "CentralTransitive",
+        "requested": "[3.8.0, )",
+        "resolved": "3.8.0",
+        "contentHash": "kbUsldc5Fn9IKgzL2nr4VvN/mKqPqn8zGXUZpA7uL6svCA4psF+qMK519EhMvderpU4pAJoqk9DWpiSIkiZtXA=="
       },
       "Google.OrTools": {
         "type": "CentralTransitive",
