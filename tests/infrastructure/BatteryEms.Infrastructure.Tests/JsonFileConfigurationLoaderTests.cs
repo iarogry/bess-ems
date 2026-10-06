@@ -223,7 +223,21 @@ public sealed class JsonFileConfigurationLoaderTests
         var generation = Assert.Single(configuration.Meters, meter => meter.Role == SiteBalanceMeterRole.GenerationMeter);
         Assert.Equal("929", generation.MeterId);
         Assert.Equal("gas_cogeneration", generation.GenerationType);
-        Assert.All(configuration.Meters, meter => Assert.Equal(400, meter.ValueMultiplier));
+        var expectedMultipliers = new Dictionary<string, double>
+        {
+            ["869"] = 40,
+            ["870"] = 3000,
+            ["871"] = 3000,
+            ["899"] = 1,
+            ["900"] = 1,
+            ["929"] = 200,
+            ["872"] = 1000,
+            ["873"] = 1000,
+            ["874"] = 1000,
+            ["875"] = 1000,
+            ["876"] = 40
+        };
+        Assert.All(configuration.Meters, meter => Assert.Equal(expectedMultipliers[meter.MeterId], meter.ValueMultiplier));
 
         var from = new DateTimeOffset(2026, 6, 9, 0, 0, 0, TimeSpan.Zero);
         var result = SiteBalanceCalculator.Calculate(new SiteBalanceCalculationRequest(
