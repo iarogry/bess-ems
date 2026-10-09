@@ -1,0 +1,70 @@
+{
+  "SiteBalance": {
+    "site-zachyniaieva-113": {
+      "Meters": {
+        "761": {
+          "Name": "PS Khortytsia f-67",
+          "Kt": 15,
+          "Kn": 60,
+          "Role": "MainGridMeter"
+        },
+        "762": {
+          "Name": "PS Ukrainska f-177",
+          "Kt": 15,
+          "Kn": 100,
+          "Role": "MainGridMeter"
+        }
+      }
+    },
+    "site-ukrainska-96": {
+      "Meters": {
+        "550": {
+          "Name": "Input 1",
+          "Kt": 10,
+          "Kn": 60,
+          "Role": "MainGridMeter"
+        },
+        "551": {
+          "Name": "Input 2",
+          "Kt": 10,
+          "Kn": 60,
+          "Role": "MainGridMeter"
+        }
+      }
+    },
+    "site-verkhnia-1": {
+      "Meters": {
+        "756": {
+          "Name": "Input 1",
+          "Kt": 200,
+          "Kn": 1,
+          "Role": "MainGridMeter"
+        },
+        "757": {
+          "Name": "Input 2",
+          "Kt": 200,
+          "Kn": 1,
+          "Role": "MainGridMeter"
+        },
+        "758": {
+          "Name": "BS Astelit Lifecell",
+          "Kt": 1,
+          "Kn": 1,
+          "Role": "SubconsumerMeter"
+        },
+        "759": {
+          "Name": "BS Kyivstar",
+          "Kt": 1,
+          "Kn": 1,
+          "Role": "SubconsumerMeter"
+        },
+        "760": {
+          "Name": "BS UMS",
+          "Kt": 1,
+          "Kn": 1,
+          "Role": "SubconsumerMeter"
+        }
+      }
+    }
+  }
+}

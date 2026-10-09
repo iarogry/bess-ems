@@ -56,7 +56,9 @@ public sealed partial class DapperActivationDedupeStore : IActivationDedupeStore
     // status-only measurement rows. They do not change the activation
     // dedupe table, but a fully migrated database must not be rejected
     // as an incompatible future checkpoint.
-    private const int LatestKnownMigrationNumber = 12;
+    // 13 adds consumption interval duration without changing activation
+    // checkpoints. Accept this build's complete schema, but not future ones.
+    private const int LatestKnownMigrationNumber = 13;
 
     private const string InsertSql = """
         INSERT INTO regelleistung_activations

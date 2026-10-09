@@ -1,0 +1,50 @@
+# Build outputs
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Pp]ublish/
+[Rr]elease/
+[Dd]ebug/
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# IDE / editor
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Tooling caches
+.nuget/
+.dotnet-x64/
+.tmp-pvlib/
+~$*
+
+# Local environment
+.env
+.env.local
+*.local.json
+
+# RM-M2-MIG-02/03: d-migrate companion artefacts. The .sql files
+# under Migrations/RunOnce/ are committed (they're the migration
+# payload); the .report.yaml siblings are transient and contain
+# generation timestamps, so they are regenerated on every
+# `make schema-generate` and never tracked.
+src/adapters/driven/BatteryEms.Adapters.Persistence/Migrations/**/*.report.yaml
+
+# Claude Code harness state (per-session lock files, transcripts, etc.).
+.claude/
+
+# Release / CI artefact outputs (docs/user/releasing.md §7). Produced
+# locally by `make release-assets` and in CI by the release/build
+# workflows under artifacts/release(-local)/ and artifacts/ci/.
+artifacts/

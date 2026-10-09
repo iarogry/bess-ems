@@ -1,0 +1,37 @@
+CREATE TABLE IF NOT EXISTS site_pv_profiles (
+    site_id text NOT NULL,
+    pv_system_id text NOT NULL,
+    name text NOT NULL,
+    forecast_asset_id text NOT NULL,
+    enabled boolean NOT NULL,
+    latitude double precision NOT NULL,
+    longitude double precision NOT NULL,
+    tilt_degrees double precision NOT NULL,
+    azimuth_degrees double precision NOT NULL,
+    installed_dc_kw double precision NOT NULL,
+    inverter_ac_kw double precision NOT NULL,
+    temperature_coefficient_per_degree double precision NOT NULL,
+    system_loss_fraction double precision NOT NULL,
+    forecast_horizon_hours integer NOT NULL,
+    forecast_resolution_minutes integer NOT NULL,
+    forecast_provider text NOT NULL,
+    forecast_engine text NOT NULL,
+    notes text NULL,
+    updated_at timestamptz NOT NULL,
+    CONSTRAINT pk_site_pv_profiles PRIMARY KEY (site_id, pv_system_id),
+    CONSTRAINT uq_site_pv_profiles_forecast_asset UNIQUE (forecast_asset_id),
+    CONSTRAINT ck_site_pv_profiles_latitude CHECK (latitude >= -90 AND latitude <= 90),
+    CONSTRAINT ck_site_pv_profiles_longitude CHECK (longitude >= -180 AND longitude <= 180),
+    CONSTRAINT ck_site_pv_profiles_tilt CHECK (tilt_degrees >= 0 AND tilt_degrees <= 90),
+    CONSTRAINT ck_site_pv_profiles_azimuth CHECK (azimuth_degrees >= -180 AND azimuth_degrees <= 180),
+    CONSTRAINT ck_site_pv_profiles_installed_dc_positive CHECK (installed_dc_kw > 0),
+    CONSTRAINT ck_site_pv_profiles_inverter_ac_positive CHECK (inverter_ac_kw > 0),
+    CONSTRAINT ck_site_pv_profiles_dc_ge_ac CHECK (installed_dc_kw >= inverter_ac_kw),
+    CONSTRAINT ck_site_pv_profiles_temp_coeff CHECK (temperature_coefficient_per_degree >= -0.02 AND temperature_coefficient_per_degree <= 0),
+    CONSTRAINT ck_site_pv_profiles_system_loss CHECK (system_loss_fraction >= 0 AND system_loss_fraction <= 0.5),
+    CONSTRAINT ck_site_pv_profiles_horizon CHECK (forecast_horizon_hours >= 1 AND forecast_horizon_hours <= 168),
+    CONSTRAINT ck_site_pv_profiles_resolution CHECK (forecast_resolution_minutes IN (15, 60))
+);
+
+CREATE INDEX IF NOT EXISTS ix_site_pv_profiles_site_enabled
+    ON site_pv_profiles (site_id, enabled);

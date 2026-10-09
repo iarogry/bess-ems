@@ -37,11 +37,13 @@ public static class ApplicationServiceRegistration
         services.AddSingleton<IBatteryAssetRegistry>(_ => new InMemoryBatteryAssetRegistry());
         services.AddSingleton<ISnapshotStore>(_ => new InMemorySnapshotStore(batteryMaxAge));
         services.AddSingleton<ISiteTelemetryStore>(_ => new InMemorySiteTelemetryStore(siteTelemetryMaxAge));
+        services.AddSingleton<IChpTelemetryStore, InMemoryChpTelemetryStore>();
         services.AddSingleton<ISiteConsumptionStore, InMemorySiteConsumptionStore>();
+        services.AddSingleton<ISiteConsumptionPollStatusStore, InMemorySiteConsumptionPollStatusStore>();
         services.AddSingleton<ISiteMeasurementStore, InMemorySiteMeasurementStore>();
         services.AddSingleton<ISitePvProfileStore, InMemorySitePvProfileStore>();
         services.AddSingleton<ISolarForecastStore, InMemorySolarForecastStore>();
-        services.AddSingleton<ISiteRegistry, InMemorySiteRegistry>();
+        services.AddConfiguredSiteCatalog();
         services.AddSingleton<ISiteSettingsPreparationUseCase, DefaultSiteSettingsPreparationUseCase>();
         services.AddSingleton<ISiteBalanceUseCase, DefaultSiteBalanceUseCase>();
         services.AddSingleton<IOrchestrationRunStore, InMemoryOrchestrationRunStore>();

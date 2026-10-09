@@ -1,0 +1,27 @@
+{
+  "Bess": {
+    "SolarForecastSource": "open_meteo"
+  },
+  "OpenMeteoSolarForecast": {
+    "engine_backend": "pvlib_sidecar",
+    "python_executable": "python",
+    "sidecar_script_path": "tools/solar-forecast-engine/pvlib_openmeteo_engine.py",
+    "asset_id": "single-bess-1",
+    "latitude": 49.8397,
+    "longitude": 24.0297,
+    "tilt_degrees": 25,
+    "azimuth_degrees": 0,
+    "installed_dc_kw": 900,
+    "inverter_ac_kw": 800,
+    "temperature_coefficient_per_degree": -0.004,
+    "noct_cell_temperature_celsius": 45,
+    "inverter_efficiency": 0.96,
+    "system_loss_fraction": 0.14,
+    "forecast_refresh_seconds": 1800,
+    "forecast_hours": 48,
+    "output_resolution_minutes": 15,
+    "http_timeout_seconds": 30,
+    "base_url": "https://api.open-meteo.com/v1/forecast",
+    "weather_model": "best_match"
+  }
+}

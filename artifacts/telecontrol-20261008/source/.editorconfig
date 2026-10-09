@@ -1,0 +1,45 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,csproj,props,targets,sln}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[Makefile]
+indent_style = tab
+
+[Dockerfile]
+indent_size = 2
+
+# --- Code-metrics and SOLID-leaning rules (RM-M1-20) ----------------------
+# Activation: AnalysisLevel=latest-all in Directory.Build.props enables the
+# rules; the severities below pin them as errors regardless of SDK
+# default-severity drift across analyzer versions.
+[*.cs]
+# SRP / maintainability
+dotnet_diagnostic.CA1501.severity = error
+dotnet_diagnostic.CA1502.severity = error
+dotnet_diagnostic.CA1505.severity = error
+dotnet_diagnostic.CA1506.severity = error
+# OCP / LSP / ISP / DIP
+dotnet_diagnostic.CA1000.severity = error
+dotnet_diagnostic.CA1001.severity = error
+dotnet_diagnostic.CA1002.severity = error
+dotnet_diagnostic.CA1010.severity = error
+dotnet_diagnostic.CA1012.severity = error
+dotnet_diagnostic.CA1033.severity = error
+dotnet_diagnostic.CA1040.severity = error
+dotnet_diagnostic.CA1047.severity = error
+dotnet_diagnostic.CA1051.severity = error
+dotnet_diagnostic.CA1065.severity = error
+dotnet_diagnostic.CA1715.severity = error
+dotnet_diagnostic.CA1822.severity = error

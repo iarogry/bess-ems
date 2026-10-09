@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "deliveryDate": "2026-09-08",
+  "timeZone": "Europe/Kyiv",
+  "priceSource": "OREE_DAM_IPS",
+  "planStatus": "Optimal",
+  "executionStatus": "pending_live_prewrite",
+  "executionReady": true,
+  "payloadReady": true,
+  "requiresLivePrewrite": true,
+  "applyStatus": "not_applied",
+  "planningOnly": true,
+  "sourceMetadata": {
+    "provider": "OREE",
+    "market": "DAM",
+    "zone": "IPS",
+    "monthSelected": "09.2026",
+    "targetRow": "08.09.2026",
+    "currency": "UAH/MWh",
+    "hourCount": 24,
+    "officialXls": "tmp/bess-deye-daily/oree-DAM-IPS-202609.xls",
+    "officialEndpoint": "https://www.oree.com.ua/index.php/pricectr/get_file"
+  },
+  "telemetry": {
+    "source": "Deye master inverter BMS",
+    "collectedAt": "2026-09-08T09:36:50+03:00",
+    "freshnessSecondsAtPlanning": 123,
+    "masterAlias": "inverter_1",
+    "masterOnline": true,
+    "invertersOnline": 2,
+    "bmsVoltageV": 526.7,
+    "bmsSocChannelsPercent": [30, 30, 30, 30],
+    "reportedBatteryRatedCapacityAh": 300,
+    "planningRatedCapacityAhPerString": 314,
+    "parallelBmsStringCount": 4,
+    "energyCapacityFormula": "current BMSVoltage × 4 × 314 / 1000",
+    "energyCapacityKwh": 661.5352,
+    "batteryPowerKw": -1.0
+  },
+  "limits": {
+    "parallelInverterCount": 2,
+    "ratedCapacityAhPerString": 314,
+    "aggregatePowerKw": 160,
+    "aggregateChargeLimitKw": 160,
+    "aggregateDischargeLimitKw": 160,
+    "masterTouPowerLimitKw": 80,
+    "masterTouPowerLimitW": 80000,
+    "upsReserveSocPercent": 20,
+    "maximumSocPercent": 90,
+    "chargeEfficiency": 0.95,
+    "dischargeEfficiency": 0.95
+  },
+  "baseline": {
+    "masterTouReadable": true,
+    "masterTouEnabled": true,
+    "masterTouSlotCount": 6,
+    "masterSystemReadable": true,
+    "masterBatteryReadable": true,
+    "masterTouRaw": [
+      { "time": "01:00", "enableGeneration": true, "enableGridCharge": false, "power": 79000, "soc": 30, "voltage": 290 },
+      { "time": "05:00", "enableGeneration": true, "enableGridCharge": false, "power": 80000, "soc": 30, "voltage": 290 },
+      { "time": "09:00", "enableGeneration": true, "enableGridCharge": false, "power": 80000, "soc": 30, "voltage": 290 },
+      { "time": "11:00", "enableGeneration": true, "enableGridCharge": true, "power": 80000, "soc": 100, "voltage": 290 },
+      { "time": "19:00", "enableGeneration": true, "enableGridCharge": false, "power": 80000, "soc": 30, "voltage": 290 },
+      { "time": "00:00", "enableGeneration": true, "enableGridCharge": false, "power": 80000, "soc": 30, "voltage": 290 }
+    ],
+    "enableSellBaseline": false,
+    "enableSellBaselineDerivation": "conservative false because config/tou read did not return enableSell",
+    "slaveTouReadRequired": false,
+    "slaveTouReadable": false,
+    "slaveTouReadReason": "Deye config/tou returned code 2106001; informational only because TOU is managed on master",
+    "masterSlaveLinkVerification": "deferred_to_live_prewrite",
+    "masterSlaveLinkEvidence": "both inverters were online at planning time; live operational evidence must be refreshed before write"
+  },
+  "optimization": {
+    "oneOptimizationRun": true,
+    "solver": "OR-Tools/GLOP",
+    "status": "Optimal",
+    "objectiveValue": -9053.10,
+    "initialSocPercent": 30,
+    "terminalSocPercent": 20.004,
+    "priceTieBreak": "earliest charge hour on equal prices",
+    "earlyPreChargeUsed": false,
+    "signConvention": "negative aggregateTargetPowerKw is charge; positive is discharge",
+    "economics": {
+      "chargeEnergyKwh": 1127.4,
+      "dischargeEnergyKwh": 1080.3,
+      "chargeCostUah": 2695.58,
+      "dischargeRevenueUah": 11747.87,
+      "grossEnergyMarginUah": 9052.29
+    }
+  },
+  "hourlyPricesUahMwh": [14977.77, 6350, 5486, 5500, 5500, 6300, 10982, 12082, 6988, 4980, 955, 10, 25, 100, 10, 25, 2000, 6900, 12000, 14231, 15000, 13248, 12429.26, 9800],
+  "hourlyActions": [
+    { "time": "00:00", "priceUahMwh": 14977.77, "action": "discharge", "aggregateTargetPowerKw": 62.8, "masterPowerW": 31400, "socEndPercent": 20.01 },
+    { "time": "01:00", "priceUahMwh": 6350, "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0, "socEndPercent": 20.01 },
+    { "time": "02:00", "priceUahMwh": 5486, "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000, "socEndPercent": 42.98 },
+    { "time": "03:00", "priceUahMwh": 5500, "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000, "socEndPercent": 65.96 },
+    { "time": "04:00", "priceUahMwh": 5500, "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000, "socEndPercent": 88.94 },
+    { "time": "05:00", "priceUahMwh": 6300, "action": "charge", "aggregateTargetPowerKw": -7.4, "masterPowerW": 3700, "socEndPercent": 90.0 },
+    { "time": "06:00", "priceUahMwh": 10982, "action": "discharge", "aggregateTargetPowerKw": 160, "masterPowerW": 80000, "socEndPercent": 64.54 },
+    { "time": "07:00", "priceUahMwh": 12082, "action": "discharge", "aggregateTargetPowerKw": 160, "masterPowerW": 80000, "socEndPercent": 39.08 },
+    { "time": "08:00", "priceUahMwh": 6988, "action": "discharge", "aggregateTargetPowerKw": 119.9, "masterPowerW": 59950, "socEndPercent": 20.0 },
+    { "time": "09:00", "priceUahMwh": 4980, "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0, "socEndPercent": 20.0 },
+    { "time": "10:00", "priceUahMwh": 955, "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0, "socEndPercent": 20.0 },
+    { "time": "11:00", "priceUahMwh": 10, "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000, "socEndPercent": 42.98 },
+    { "time": "12:00", "priceUahMwh": 25, "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000, "socEndPercent": 65.96 },
+    { "time": "13:00", "priceUahMwh": 100, "action": "discharge", "aggregateTargetPowerKw": 137.7, "masterPowerW": 68850, "socEndPercent": 44.05 },
+    { "time": "14:00", "priceUahMwh": 10, "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000, "socEndPercent": 67.02 },
+    { "time": "15:00", "priceUahMwh": 25, "action": "charge", "aggregateTargetPowerKw": -160, "masterPowerW": 80000, "socEndPercent": 90.0 },
+    { "time": "16:00", "priceUahMwh": 2000, "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0, "socEndPercent": 90.0 },
+    { "time": "17:00", "priceUahMwh": 6900, "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0, "socEndPercent": 90.0 },
+    { "time": "18:00", "priceUahMwh": 12000, "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0, "socEndPercent": 90.0 },
+    { "time": "19:00", "priceUahMwh": 14231, "action": "discharge", "aggregateTargetPowerKw": 160, "masterPowerW": 80000, "socEndPercent": 64.54 },
+    { "time": "20:00", "priceUahMwh": 15000, "action": "discharge", "aggregateTargetPowerKw": 160, "masterPowerW": 80000, "socEndPercent": 39.08 },
+    { "time": "21:00", "priceUahMwh": 13248, "action": "discharge", "aggregateTargetPowerKw": 119.9, "masterPowerW": 59950, "socEndPercent": 20.0 },
+    { "time": "22:00", "priceUahMwh": 12429.26, "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0, "socEndPercent": 20.0 },
+    { "time": "23:00", "priceUahMwh": 9800, "action": "idle", "aggregateTargetPowerKw": 0, "masterPowerW": 0, "socEndPercent": 20.0 }
+  ],
+  "touWindows": [
+    {
+      "id": "Z1",
+      "activateAt": "2026-09-07T23:55:00+03:00",
+      "activeRange": "00:00-06:00",
+      "intervals": [
+        { "time": "00:00", "from": "00:00", "to": "01:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 62.8, "enableGeneration": true, "enableGridCharge": false, "enableSell": true, "power": 31400, "soc": 20, "voltage": 290 },
+        { "time": "01:00", "from": "01:00", "to": "02:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "power": 0, "soc": 20, "voltage": 290 },
+        { "time": "02:00", "from": "02:00", "to": "04:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "enableGeneration": true, "enableGridCharge": true, "enableSell": false, "power": 80000, "soc": 90, "voltage": 290 },
+        { "time": "04:00", "from": "04:00", "to": "05:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "enableGeneration": true, "enableGridCharge": true, "enableSell": false, "power": 80000, "soc": 90, "voltage": 290 },
+        { "time": "05:00", "from": "05:00", "to": "06:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -7.4, "enableGeneration": true, "enableGridCharge": true, "enableSell": false, "power": 3700, "soc": 90, "voltage": 290 },
+        { "time": "06:00", "from": "06:00", "to": "24:00", "state": "gray", "action": "baseline-idle", "aggregateTargetPowerKw": 0, "baselineSourceTime": "05:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "power": 80000, "soc": 30, "voltage": 290 }
+      ]
+    },
+    {
+      "id": "Z2",
+      "activateAt": "2026-09-08T05:55:00+03:00",
+      "activeRange": "06:00-12:00",
+      "intervals": [
+        { "time": "00:00", "from": "00:00", "to": "06:00", "state": "gray", "action": "baseline-idle", "aggregateTargetPowerKw": 0, "baselineSourceTime": "00:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "power": 80000, "soc": 30, "voltage": 290 },
+        { "time": "06:00", "from": "06:00", "to": "08:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 160, "enableGeneration": true, "enableGridCharge": false, "enableSell": true, "power": 80000, "soc": 20, "voltage": 290 },
+        { "time": "08:00", "from": "08:00", "to": "09:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 119.9, "enableGeneration": true, "enableGridCharge": false, "enableSell": true, "power": 59950, "soc": 20, "voltage": 290 },
+        { "time": "09:00", "from": "09:00", "to": "11:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "power": 0, "soc": 20, "voltage": 290 },
+        { "time": "11:00", "from": "11:00", "to": "12:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "enableGeneration": true, "enableGridCharge": true, "enableSell": false, "power": 80000, "soc": 90, "voltage": 290 },
+        { "time": "12:00", "from": "12:00", "to": "24:00", "state": "gray", "action": "baseline-idle", "aggregateTargetPowerKw": 0, "baselineSourceTime": "09:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "power": 80000, "soc": 30, "voltage": 290 }
+      ]
+    },
+    {
+      "id": "Z3",
+      "activateAt": "2026-09-08T11:55:00+03:00",
+      "activeRange": "12:00-18:00",
+      "intervals": [
+        { "time": "00:00", "from": "00:00", "to": "12:00", "state": "gray", "action": "baseline-idle", "aggregateTargetPowerKw": 0, "baselineSourceTime": "00:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "power": 80000, "soc": 30, "voltage": 290 },
+        { "time": "12:00", "from": "12:00", "to": "13:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "enableGeneration": true, "enableGridCharge": true, "enableSell": false, "power": 80000, "soc": 90, "voltage": 290 },
+        { "time": "13:00", "from": "13:00", "to": "14:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 137.7, "enableGeneration": true, "enableGridCharge": false, "enableSell": true, "power": 68850, "soc": 20, "voltage": 290 },
+        { "time": "14:00", "from": "14:00", "to": "16:00", "state": "active", "action": "charge", "aggregateTargetPowerKw": -160, "enableGeneration": true, "enableGridCharge": true, "enableSell": false, "power": 80000, "soc": 90, "voltage": 290 },
+        { "time": "16:00", "from": "16:00", "to": "18:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "power": 0, "soc": 90, "voltage": 290 },
+        { "time": "18:00", "from": "18:00", "to": "24:00", "state": "gray", "action": "baseline-idle", "aggregateTargetPowerKw": 0, "baselineSourceTime": "19:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "power": 80000, "soc": 30, "voltage": 290 }
+      ]
+    },
+    {
+      "id": "Z4",
+      "activateAt": "2026-09-08T17:55:00+03:00",
+      "activeRange": "18:00-24:00",
+      "intervals": [
+        { "time": "00:00", "from": "00:00", "to": "18:00", "state": "gray", "action": "baseline-idle", "aggregateTargetPowerKw": 0, "baselineSourceTime": "00:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "power": 80000, "soc": 30, "voltage": 290 },
+        { "time": "18:00", "from": "18:00", "to": "19:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "power": 0, "soc": 20, "voltage": 290 },
+        { "time": "19:00", "from": "19:00", "to": "20:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 160, "enableGeneration": true, "enableGridCharge": false, "enableSell": true, "power": 80000, "soc": 20, "voltage": 290 },
+        { "time": "20:00", "from": "20:00", "to": "22:00", "state": "active", "action": "discharge", "aggregateTargetPowerKw": 140, "enableGeneration": true, "enableGridCharge": false, "enableSell": true, "power": 70000, "soc": 20, "voltage": 290 },
+        { "time": "22:00", "from": "22:00", "to": "23:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "power": 0, "soc": 20, "voltage": 290 },
+        { "time": "23:00", "from": "23:00", "to": "24:00", "state": "active", "action": "idle", "aggregateTargetPowerKw": 0, "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "power": 0, "soc": 20, "voltage": 290 }
+      ]
+    }
+  ],
+  "validation": {
+    "priceDateMatchesDeliveryDate": true,
+    "priceCurrencyIsUahPerMwh": true,
+    "priceHourCount": 24,
+    "priceMissingSlots": 0,
+    "priceDuplicateSlots": 0,
+    "windowCount": 4,
+    "intervalCountPerWindow": 6,
+    "allPayloadFieldsPresent": true,
+    "masterPowerMaxW": 80000,
+    "aggregatePowerMaxKw": 160,
+    "allWindowsCoverFullDay": true,
+    "validationNote": "Payloads are structurally ready and cover the full day; final execution readiness is determined by live prewrite validation."
+  },
+  "planningWarnings": [
+    "Slave config/tou is not used as a topology guard; TOU is read and written only on master.",
+    "Live BMS, two-inverter online state, alarms and optional explicit parallel/link status must be checked before write."
+  ],
+  "blockedReasons": [],
+  "writeOperations": {
+    "orderSysTouUpdateCalled": false,
+    "orderSysTouSwitchCalled": false,
+    "otherDeyeWriteCalled": false,
+    "masterChanged": false,
+    "slaveChanged": false
+  }
+}

@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>BatteryEms.Adapters.Persistence</RootNamespace>
+    <AssemblyName>BatteryEms.Adapters.Persistence</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="dbup-postgresql" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+  <!-- RM-M2-MIG-02: SQL migrations live under Migrations/RunOnce/ and
+       are embedded into the assembly so DbUp can load them from a
+       single resource namespace. The numeric ????_*.sql glob excludes
+       Migrations/Drafts/ files (kept as Build-Action None below)
+       which would otherwise be picked up before they are ready to
+       apply. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations/RunOnce/????_*.sql" />
+    <None Include="Migrations/Drafts/**/*.sql" />
+  </ItemGroup>
+
+  <!-- RM-M2-MIG-04: BessDbMigrator's continuity-preflight seam is
+       internal so production callers cannot skip the validation; the
+       Adapters.Persistence.Tests project needs visibility for unit
+       tests of EnsureRunOnceContinuityValid + the synthetic-script
+       constructor. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="BatteryEms.Adapters.Persistence.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\hexagon\BatteryEms.Application\BatteryEms.Application.csproj" />
+    <ProjectReference Include="..\..\..\hexagon\BatteryEms.Domain\BatteryEms.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

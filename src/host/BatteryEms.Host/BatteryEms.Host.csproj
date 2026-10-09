@@ -40,6 +40,7 @@
     <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.DeyeCloud\BatteryEms.Adapters.DeyeCloud.csproj" />
     <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Entsoe\BatteryEms.Adapters.Entsoe.csproj" />
     <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.FusionSolar\BatteryEms.Adapters.FusionSolar.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Telecontrol\BatteryEms.Adapters.Telecontrol.csproj" />
     <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Askue\BatteryEms.Adapters.Askue.csproj" />
     <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.OpenMeteo\BatteryEms.Adapters.OpenMeteo.csproj" />
   </ItemGroup>

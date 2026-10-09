@@ -1,0 +1,33 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CA1014</NoWarn>
+
+    <!-- NuGet supply-chain defence: every project emits a packages.lock.json
+         pinning the resolved content hash for every direct and transitive
+         dependency. CI restores with locked mode so a tampered or
+         republished package version (notably the Google.OrTools native
+         binaries introduced by RM-M2-OP-05) breaks the build instead of
+         silently swapping the binary. Bumping a Directory.Packages.props
+         version requires "dotnet restore /p:ForceEvaluate=true" (or the
+         force-evaluate flag) to refresh the lock files in the same commit. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- Default to locked restore everywhere — even a bare local
+         "dotnet restore" fails the same way CI does (3rd-pass review #1)
+         instead of silently regenerating lock files. Bumping a version
+         is the explicit out: pass /p:RestoreLockedMode=false or use the
+         force-evaluate flag (see docs/user/quality.md §1.4). -->
+    <RestoreLockedMode>true</RestoreLockedMode>
+  </PropertyGroup>
+
+</Project>

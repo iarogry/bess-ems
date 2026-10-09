@@ -1,0 +1,32 @@
+{
+  "Bess": {
+    "ShadowSchedulerEnabled": false,
+    "Planning": {
+      "Enabled": false,
+      "PlanDirectory": "/var/lib/bess-ems/day-ahead-plans",
+      "ActivationEnabled": false,
+      "ActivationBindingsDirectory": "/etc/bess-ems/activation-bindings",
+      "Targets": [
+        {
+          "SiteId": "single-bess-1",
+          "AssetId": "single-bess-1",
+          "EquipmentKind": "battery",
+          "IntegrationId": "deye_cloud",
+          "MarketBidArea": "SET_ENTSOE_DOMAIN_CODE",
+          "PriceUnit": "UAH/MWh",
+          "ThroughputCostPerKwh": 0,
+          "ReserveSocPercent": 30
+        }
+      ],
+      "Deye": {
+        "ParallelInverterCount": 2,
+        "PerInverterPowerLimitWatts": 80000,
+        "MinimumSocPercent": 30,
+        "MaximumSocPercent": 100,
+        "Voltage": 290
+      },
+      "DayAuthorizationsEnabled": false,
+      "WriterOwnerId": null
+    }
+  }
+}

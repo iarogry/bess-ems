@@ -1,0 +1,63 @@
+ARG DOTNET_SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0
+ARG DOTNET_RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled
+ARG BUILD_CONFIGURATION=Release
+
+FROM ${DOTNET_SDK_IMAGE} AS sdk-base
+ENV DOTNET_NOLOGO=true \
+    DOTNET_CLI_TELEMETRY_OPTOUT=true \
+    DOTNET_GENERATE_ASPNETCORE_CERTIFICATE=false \
+    NUGET_XMLDOC_MODE=skip
+WORKDIR /src
+
+FROM sdk-base AS restore
+COPY global.json Directory.Build.props Directory.Packages.props .editorconfig ./
+COPY BatteryEms.sln ./
+COPY src/ src/
+COPY tests/ tests/
+COPY config/ config/
+COPY proto/ proto/
+RUN dotnet restore BatteryEms.sln /p:RestoreLockedMode=false /p:ForceEvaluate=true
+
+FROM restore AS publish
+ARG BUILD_CONFIGURATION
+RUN dotnet publish src/host/BatteryEms.Host/BatteryEms.Host.csproj \
+    --configuration "${BUILD_CONFIGURATION}" \
+    --no-restore \
+    --output /publish
+
+FROM ${DOTNET_SDK_IMAGE} AS native-build
+RUN apt-get update \
+ && apt-get install --yes --no-install-recommends \
+        build-essential \
+        cmake \
+ && rm -rf /var/lib/apt/lists/*
+WORKDIR /src
+COPY native/battery_control_core/ native/battery_control_core/
+RUN cmake -S native/battery_control_core -B /build/native \
+        -DCMAKE_BUILD_TYPE=Release \
+ && cmake --build /build/native --parallel \
+ && ctest --test-dir /build/native --output-on-failure
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS verify-runtime-deps
+WORKDIR /verify
+COPY --from=native-build /build/native/libbattery_control_core.so .
+RUN ldd libbattery_control_core.so > /tmp/ldd-out 2>&1 \
+ && if grep -q "not found" /tmp/ldd-out; then \
+        echo "[verify-runtime-deps] native control library has unresolved dependencies:" >&2; \
+        cat /tmp/ldd-out >&2; \
+        exit 1; \
+    fi
+
+FROM ${DOTNET_RUNTIME_IMAGE} AS runtime
+ENV DOTNET_NOLOGO=true \
+    DOTNET_CLI_TELEMETRY_OPTOUT=true \
+    DOTNET_GENERATE_ASPNETCORE_CERTIFICATE=false \
+    ASPNETCORE_URLS=http://0.0.0.0:8080 \
+    ASPNETCORE_ENVIRONMENT=Production
+WORKDIR /app
+COPY --from=publish --chown=app:app /publish /app
+COPY --chown=app:app config/ /app/config/
+COPY --from=verify-runtime-deps --chown=app:app /verify/libbattery_control_core.so /app/native/libbattery_control_core.so
+USER app:app
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "BatteryEms.Host.dll"]

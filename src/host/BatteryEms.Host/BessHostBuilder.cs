@@ -2,6 +2,7 @@ using BatteryEms.Adapters.Askue;
 using BatteryEms.Adapters.DeyeCloud;
 using BatteryEms.Adapters.Entsoe;
 using BatteryEms.Adapters.FusionSolar;
+using BatteryEms.Adapters.Telecontrol;
 using BatteryEms.Adapters.Modbus;
 using BatteryEms.Adapters.Mqtt;
 using BatteryEms.Adapters.NativeInterop;
@@ -73,6 +74,7 @@ public static class BessHostBuilder
         ConfigurePersistence(builder.Services, hostOptions);
         ConfigurePriceSeriesSource(builder.Services, hostOptions);
         ConfigureSiteTelemetry(builder.Services, hostOptions, runtimeConfig, builder.Configuration);
+        builder.Services.AddTelecontrolTelemetry(builder.Configuration);
         ConfigureSiteConsumption(builder.Services, hostOptions, runtimeConfig, builder.Configuration);
         SolarForecastRegistration.Configure(builder.Services, hostOptions, runtimeConfig, builder.Configuration);
         ConfigureOptimization(builder.Services, hostOptions);
@@ -226,6 +228,11 @@ public static class BessHostBuilder
 
         if (string.Equals(hostOptions.ConsumptionSource, "askue", StringComparison.OrdinalIgnoreCase))
         {
+            if (configuration.GetSection("Askue:Accounts").Exists())
+            {
+                services.AddAskueSiteConsumption(configuration);
+                return;
+            }
             EnsureSiteTelemetryAssetCardinality(runtimeConfig);
             services.AddAskueSiteConsumption(configuration, runtimeConfig.SingleAsset.AssetId);
             return;
@@ -306,6 +313,7 @@ public static class BessHostBuilder
         app.MapOpenApi();
         app.MapBatteryEms();
         app.MapSiteTelemetryStatus();
+        app.MapChpTelemetry();
         app.MapSiteData();
         app.MapSitePvProfiles();
         app.MapSolarForecasts();

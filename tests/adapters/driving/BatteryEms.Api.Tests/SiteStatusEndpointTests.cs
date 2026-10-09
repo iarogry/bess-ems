@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Globalization;
 using BatteryEms.Api.Contracts;
@@ -114,6 +115,8 @@ public sealed class SiteStatusEndpointTests : IClassFixture<BatteryEmsApiFactory
     public async Task Site_pv_profile_can_be_upserted_and_listed()
     {
         using var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", BatteryEmsApiFactory.OperatorToken);
 
         var put = await client.PutAsJsonAsync(
             "/site/site-1/pv-profiles/pv-roof",
@@ -136,6 +139,7 @@ public sealed class SiteStatusEndpointTests : IClassFixture<BatteryEmsApiFactory
             TestJson.Options);
         put.EnsureSuccessStatusCode();
 
+        client.DefaultRequestHeaders.Authorization = null;
         var list = await client.GetAsync("/site/site-1/pv-profiles");
         list.EnsureSuccessStatusCode();
         var body = await list.Content.ReadFromJsonAsync<SitePvProfilesDto>(TestJson.Options);

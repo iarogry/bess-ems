@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>BatteryEms.BrokerHost</RootNamespace>
+    <AssemblyName>BatteryEms.BrokerHost</AssemblyName>
+    <NoWarn>$(NoWarn);CA1515</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.DeyeCloud\BatteryEms.Adapters.DeyeCloud.csproj" />
+    <ProjectReference Include="..\..\hexagon\BatteryEms.Application\BatteryEms.Application.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Persistence\BatteryEms.Adapters.Persistence.csproj" />
+  </ItemGroup>
+</Project>

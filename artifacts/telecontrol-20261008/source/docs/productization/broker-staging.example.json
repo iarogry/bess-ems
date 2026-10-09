@@ -1,0 +1,24 @@
+{
+  "Broker": {
+    "Enabled": false,
+    "ListenUrl": "https://localhost:5443/",
+    "PersistenceConnectionString": "",
+    "Clients": [
+      { "Role": "LegacyRunner", "OwnerId": "legacy-staging", "Token": "", "Sites": ["staging-site"] },
+      { "Role": "ProductAgent", "OwnerId": "product-staging", "Token": "", "Sites": ["staging-site"] }
+    ],
+    "Deye": {
+      "Enabled": false,
+      "WriteEnabled": false,
+      "BaseAddress": "https://vendor.invalid/v1/",
+      "SiteId": "staging-site",
+      "StationId": "",
+      "MasterSerial": "",
+      "SlaveSerial": "",
+      "AppId": "",
+      "AppSecret": "",
+      "Email": "",
+      "Password": ""
+    }
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "Sites": {
+    "Catalog": [
+      {
+        "SiteId": "site-ukrainska-96",
+        "Name": "Українська 96",
+        "TimeZone": "Europe/Kyiv"
+      },
+      {
+        "SiteId": "site-zachyniaieva-113",
+        "Name": "Зачиняєва 113",
+        "TimeZone": "Europe/Kyiv"
+      },
+      {
+        "SiteId": "site-verkhnia-1",
+        "Name": "Верхня 1",
+        "TimeZone": "Europe/Kyiv"
+      },
+      {
+        "SiteId": "site-shkilna-31",
+        "Name": "Шкільна 31",
+        "TimeZone": "Europe/Kyiv"
+      },
+      {
+        "SiteId": "site-holovna-223",
+        "Name": "Головна 223",
+        "TimeZone": "Europe/Kyiv"
+      },
+      {
+        "SiteId": "site-tsuriupy-5",
+        "Name": "Цурюпи 5",
+        "TimeZone": "Europe/Kyiv"
+      },
+      {
+        "SiteId": "site-khlibzavod-5",
+        "Name": "Новобудов 6",
+        "TimeZone": "Europe/Kyiv"
+      }
+    ]
+  },
+  "Dashboard": {
+    "MembershipConfirmed": true,
+    "Sites": [
+      {
+        "SiteId": "site-ukrainska-96",
+        "Name": "Українська 96",
+        "Sources": [
+          {
+            "PhysicalId": "fusionsolar-311287210-pv",
+            "TelemetryId": "NE=311287210",
+            "Kind": "pv"
+          }
+        ]
+      },
+      {
+        "SiteId": "site-zachyniaieva-113",
+        "Name": "Зачиняєва 113",
+        "Sources": [
+          {
+            "PhysicalId": "fusionsolar-158463133-pv",
+            "TelemetryId": "NE=158463133",
+            "Kind": "pv"
+          },
+          {
+            "PhysicalId": "fusionsolar-133657926-pv",
+            "TelemetryId": "NE=133657926",
+            "Kind": "pv"
+          }
+        ]
+      },
+      {
+        "SiteId": "site-verkhnia-1",
+        "Name": "Верхня 1",
+        "Sources": []
+      },
+      {
+        "SiteId": "site-shkilna-31",
+        "Name": "Шкільна 31",
+        "Sources": []
+      },
+      {
+        "SiteId": "site-holovna-223",
+        "Name": "Головна 223",
+        "Sources": [
+          {
+            "PhysicalId": "fusionsolar-129469793-pv",
+            "TelemetryId": "NE=129469793",
+            "Kind": "pv"
+          },
+          {
+            "PhysicalId": "fusionsolar-134735482-pv",
+            "TelemetryId": "NE=134735482",
+            "Kind": "pv"
+          }
+        ]
+      },
+      {
+        "SiteId": "site-tsuriupy-5",
+        "Name": "Цурюпи 5",
+        "Sources": []
+      },
+      {
+        "SiteId": "site-khlibzavod-5",
+        "Name": "Новобудов 6",
+        "Sources": [
+          {
+            "PhysicalId": "deye-62225431-pv",
+            "TelemetryId": "single-bess-1",
+            "Kind": "pv"
+          },
+          {
+            "PhysicalId": "deye-62225431-bess",
+            "TelemetryId": "single-bess-1",
+            "Kind": "battery"
+          },
+          {
+            "PhysicalId": "deye-62225431-load",
+            "TelemetryId": "single-bess-1",
+            "Kind": "load"
+          },
+          {
+            "PhysicalId": "viessmann-62475997-generation",
+            "TelemetryId": "telecontrol-5552",
+            "Kind": "chp"
+          }
+        ]
+      }
+    ]
+  }
+}

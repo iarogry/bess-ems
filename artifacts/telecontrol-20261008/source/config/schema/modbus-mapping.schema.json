@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bess-ems.io/schema/modbus-mapping.json",
+  "title": "Modbus adapter mapping",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_name", "unit_id_discovery", "registers"],
+  "properties": {
+    "profile_name": { "type": "string", "minLength": 1 },
+    "unit_id_discovery": { "type": "string", "enum": ["static", "dynamic", "sunspec"] },
+    "static_unit_id": { "type": "integer", "minimum": 0, "maximum": 255 },
+    "registers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/register" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "unit_id_discovery": { "const": "static" } }, "required": ["unit_id_discovery"] },
+      "then": { "required": ["static_unit_id"] }
+    }
+  ],
+  "$defs": {
+    "register": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "https://bess-ems.io/schema/device-point.json#/$defs/device_point_base" },
+        {
+          "required": [
+            "address",
+            "type",
+            "scale_factor",
+            "range",
+            "writable",
+            "write_cadence",
+            "auth_required"
+          ],
+          "properties": {
+            "address": { "type": "integer", "minimum": 0 },
+            "type": { "type": "string", "enum": ["uint16", "int16", "uint32", "int32", "float32", "string"] },
+            "register_table": {
+              "type": "string",
+              "enum": ["holding", "input"],
+              "description": "Modbus register table for reads. 'holding' (default, function code 03) keeps the M1 profile compatible; 'input' (function code 04) targets HIL-style measurement points (RM-M2-HIL-01)."
+            },
+            "word_order": {
+              "type": "string",
+              "enum": ["high_low", "low_high"],
+              "description": "Two-word ordering for 32-bit values. 'high_low' (default) matches the existing M1 decoder; 'low_high' covers HIL devices that swap the words (RM-M2-HIL-01, used by HIL-03)."
+            },
+            "scale_factor": {
+              "type": "number",
+              "not": { "const": 0 },
+              "description": "engineering_value = raw_value * scale_factor; therefore scale_factor=0 would collapse all reads to 0 and divide writes by zero. Rejected at schema time so an obviously broken profile fails before reaching the loader (carve-out N2)."
+            },
+            "range": {
+              "type": "array",
+              "items": { "type": "number" },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "writable": { "type": "boolean" },
+            "enum": {
+              "type": "object",
+              "additionalProperties": { "type": "string" },
+              "description": "Protokollspezifische Werteerklärung (Register-Wert → Label). Funktional äquivalent zu device_point_base.value_explanation; beide Felder dürfen nebeneinander stehen, der Loader bevorzugt `enum` für Modbus."
+            },
+            "write_cadence": {
+              "type": "string",
+              "enum": ["cyclic", "once_per_day", "one_shot", "heartbeat", "cooldown"]
+            },
+            "auth_required": { "type": "string", "enum": ["none", "network", "token"] },
+            "firmware_constraint": { "type": "string" },
+            "sunspec_model": { "type": "integer", "minimum": 1 }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "writable": { "const": true } }, "required": ["writable"] },
+              "then": { "required": ["write_cadence", "auth_required"] }
+            }
+          ]
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}

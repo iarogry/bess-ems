@@ -1,0 +1,56 @@
+{
+  "Bess": {
+    "ConsumptionSource": "askue"
+  },
+  "Askue": {
+    "Accounts": {
+      "khlibzavod5": {
+        "Enabled": true,
+        "SiteId": "site-khlibzavod-5",
+        "BaseUrl": "https://askue.net/api/askue/v1/json/",
+        "Username": "SET_VIA_SECRET_CONFIGURATION",
+        "Password": "SET_VIA_SECRET_CONFIGURATION",
+        "TimeZoneId": "Europe/Kyiv",
+        "PeriodSeconds": 1800,
+        "PollIntervalSeconds": 1800,
+        "DaysBack": 0
+      },
+      "zachyniaieva113": {
+        "Enabled": true,
+        "SiteId": "site-zachyniaieva-113",
+        "BaseUrl": "https://askue.net/api/askue/v1/json/",
+        "Username": "SET_VIA_SECRET_CONFIGURATION",
+        "Password": "SET_VIA_SECRET_CONFIGURATION",
+        "TimeZoneId": "Europe/Kyiv",
+        "PeriodSeconds": 1800,
+        "PollIntervalSeconds": 1800,
+        "DaysBack": 0,
+        "PointIds": "761,762"
+      },
+      "ukrainska96": {
+        "Enabled": true,
+        "SiteId": "site-ukrainska-96",
+        "BaseUrl": "https://askue.net/api/askue/v1/json/",
+        "Username": "SET_VIA_SECRET_CONFIGURATION",
+        "Password": "SET_VIA_SECRET_CONFIGURATION",
+        "TimeZoneId": "Europe/Kyiv",
+        "PeriodSeconds": 1800,
+        "PollIntervalSeconds": 1800,
+        "DaysBack": 0,
+        "PointIds": "550,551"
+      },
+      "verkhnia1": {
+        "Enabled": true,
+        "SiteId": "site-verkhnia-1",
+        "BaseUrl": "https://askue.net/api/askue/v1/json/",
+        "Username": "SET_VIA_SECRET_CONFIGURATION",
+        "Password": "SET_VIA_SECRET_CONFIGURATION",
+        "TimeZoneId": "Europe/Kyiv",
+        "PeriodSeconds": 1800,
+        "PollIntervalSeconds": 1800,
+        "DaysBack": 0,
+        "PointIds": "756,757,758,759,760"
+      }
+    }
+  }
+}

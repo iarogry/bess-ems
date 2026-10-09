@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>BatteryEms.Adapters.Modbus</RootNamespace>
+    <AssemblyName>BatteryEms.Adapters.Modbus</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentModbus" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\hexagon\BatteryEms.Application\BatteryEms.Application.csproj" />
+    <ProjectReference Include="..\..\..\hexagon\BatteryEms.Domain\BatteryEms.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

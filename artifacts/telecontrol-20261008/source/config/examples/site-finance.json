@@ -1,0 +1,58 @@
+{
+  "SiteFinance": {
+    "PlanDirectory": "/var/lib/bess/financial-plans",
+    "Sites": [
+      {
+        "SiteId": "site-khlibzavod-5",
+        "Revision": "example-unverified",
+        "MarketBidArea": "10Y1001C--000182",
+        "Currency": "UAH",
+        "PriceCurrency": "UAH",
+        "ExchangeRate": 1,
+        "DistributionOperator": "SET_OPERATOR",
+        "VoltageClass": "SET_CLASS",
+        "Parameters": {
+          "DistributionPerKwh": 0,
+          "TransmissionPerKwh": 0,
+          "ReleaseCoefficient": 1,
+          "KguCostPerKwh": 0,
+          "PvCostPerKwh": 0,
+          "BatteryDegradationPerKwh": 0,
+          "FixedDailyCost": 0,
+          "BalanceToleranceKwh": 0.01
+        },
+        "Review": {
+          "Month": "2026-10-01",
+          "CheckedOn": "2026-10-01",
+          "EffectiveFrom": "2026-10-01",
+          "EffectiveThrough": "2026-10-31",
+          "ParameterRevision": "example-unverified",
+          "DistributionOperator": "SET_OPERATOR",
+          "VoltageClass": "SET_CLASS",
+          "DistributionSource": "https://www.nerc.gov.ua/sferi-diyalnosti/elektroenergiya/promislovist/tarifi-na-elektroenergiyu-dlya-nepobutovih-spozhivachiv/tarifi-na-poslugi-z-rozpodilu-elektrichnoyi-energiyi",
+          "DistributionResolution": "SET_RESOLUTION",
+          "TransmissionSource": "https://www.nerc.gov.ua/sferi-diyalnosti/elektroenergiya/promislovist/tarifi-na-elektroenergiyu-dlya-nepobutovih-spozhivachiv/tarif-na-poslugi-z-peredachi-elektrichnoyi-energiyi",
+          "TransmissionResolution": "SET_RESOLUTION",
+          "CoefficientEvidence": "SET_CONTRACT_REFERENCE",
+          "CurrencyEvidence": "SET_PRICE_CURRENCY_AND_FX_REFERENCE",
+          "Parameters": {
+            "DistributionPerKwh": 0,
+            "TransmissionPerKwh": 0,
+            "ReleaseCoefficient": 1,
+            "KguCostPerKwh": 0,
+            "PvCostPerKwh": 0,
+            "BatteryDegradationPerKwh": 0,
+            "FixedDailyCost": 0,
+            "BalanceToleranceKwh": 0.01
+          },
+          "Currency": "UAH",
+          "PriceCurrency": "UAH",
+          "ExchangeRate": 1,
+          "Confirmed": false,
+          "HasConflict": false,
+          "MarketBidArea": "10Y1001C--000182"
+        }
+      }
+    ]
+  }
+}

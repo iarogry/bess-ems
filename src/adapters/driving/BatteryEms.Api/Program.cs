@@ -65,6 +65,7 @@ public class Program
         app.MapOpenApi();
         app.MapBatteryEms();
         app.MapSiteTelemetryStatus();
+        app.MapChpTelemetry();
         app.MapSiteData();
         app.MapSitePvProfiles();
         app.MapSolarForecasts();

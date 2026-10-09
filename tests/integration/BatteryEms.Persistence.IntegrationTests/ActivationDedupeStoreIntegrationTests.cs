@@ -75,6 +75,29 @@ public sealed class ActivationDedupeStoreIntegrationTests : IAsyncLifetime
             NullLogger<DapperActivationDedupeStore>.Instance);
 
     [Fact]
+    public async Task Fully_migrated_schema_is_accepted_by_checkpoint_validation()
+    {
+        var expectedLatest = typeof(BessDbMigrator).Assembly.GetManifestResourceNames()
+            .Where(name => name.Contains(".Migrations.RunOnce.", StringComparison.Ordinal))
+            .OrderByDescending(name => name, StringComparer.Ordinal)
+            .First();
+        var connection = await _dataSource!.OpenConnectionAsync();
+        await using (connection.ConfigureAwait(false))
+        {
+            await using var cmd = new NpgsqlCommand(
+                "SELECT scriptname FROM __schema_versions ORDER BY scriptname DESC LIMIT 1;",
+                connection);
+            Assert.Equal(expectedLatest, await cmd.ExecuteScalarAsync() as string);
+        }
+
+        using var store = BuildStore();
+        await store.EnsureLoadedAsync();
+
+        Assert.False(store.IsInvalid);
+        Assert.Equal(AcceptResult.Accepted, await store.TryAcceptAsync(Activation()));
+    }
+
+    [Fact]
     public async Task First_accept_persists_and_returns_accepted()
     {
         var store = BuildStore();

@@ -1,6 +1,6 @@
 # Deye TOU — daily planning runbook
 
-Contract version: `1.3.0`
+Contract version: `1.4.0`
 
 This document is the authoritative operating contract for the scheduled
 automation `TOU BESS Deye — планування 15:00`. The automation prompt must read
@@ -216,6 +216,39 @@ request time, snapshot time, `recoveryStartHour`, and the IDs of missed
 activation windows. Do not store fabricated SOC values for elapsed hours.
 Never expose credentials, tokens, station ID, serial numbers, or raw environment
 contents.
+
+## Daily price and operating-plan chart
+
+After saving, re-reading, and validating each daily scenario, show its chart in
+the run's final response without requiring a separate user request. This also
+applies to explicitly requested same-day recovery plans. Read chart data only
+from the final saved scenario; do not re-optimize, change the scenario, poll
+Deye again, or invoke the switching runner to prepare the chart.
+
+Use the same three vertically stacked, aligned hourly plots as the approved
+10.10.2026 chart:
+
+- Official DAM/IPS prices in UAH/MWh.
+- Aggregate power of both inverters in kW: charge below zero, discharge above
+  zero, and idle at zero. Do not substitute master power or energy for power.
+- Planned SOC in percent, including the start/end trajectory and a clearly
+  labeled 30% UPS-reserve reference.
+
+Label the target date and Europe/Kyiv time scale, preserve every validated hour,
+and identify the chart as a plan, not actual execution. In recovery mode, show
+elapsed/not-planned hours as such and leave their unknown SOC unplotted. Do not
+fabricate trajectories or present a blocked report as a completed plan.
+
+Use the visualize skill when available, with a responsive, theme-aware chart,
+series legend toggles and shared hourly price/power/SOC hover details. Save a
+date-specific fragment named `deye-tou-prices-plan-YYYY-MM-DD.html` in the
+thread's authorized durable visualization directory, or an authorized project
+output directory when that is unavailable. Read it back and verify its data
+against the saved scenario, units, signs, date, rendering and interactions;
+include its inline visualization reference in the final response. Audit chart
+reads, writes and checks under the same run ID. If chart generation or rendering
+fails, report and audit the presentation failure explicitly; do not invent a
+chart or silently omit it, and do not change an already validated scenario.
 
 ## Change control
 

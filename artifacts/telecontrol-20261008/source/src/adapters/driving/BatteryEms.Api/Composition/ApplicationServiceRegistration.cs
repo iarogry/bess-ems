@@ -1,0 +1,176 @@
+using BatteryEms.Application.Api;
+using BatteryEms.Application.Assets;
+using BatteryEms.Application.Control;
+using BatteryEms.Application.Forecasting;
+using BatteryEms.Application.Markets;
+using BatteryEms.Application.Observability;
+using BatteryEms.Application.Optimization;
+using BatteryEms.Application.Orchestration;
+using BatteryEms.Application.Persistence;
+using BatteryEms.Application.Realtime;
+using BatteryEms.Application.Site;
+using BatteryEms.Application.Time;
+using BatteryEms.Domain;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace BatteryEms.Api.Composition;
+
+// Concentrates the Application-layer DI wiring used by the API host.
+// Pulling these AddSingleton calls out of Program.BuildApp keeps the
+// composition root's class coupling under the CA1506 threshold; the
+// Worker (RM-M1-19) will reuse this extension for the same shape.
+public static class ApplicationServiceRegistration
+{
+    private static readonly TimeSpan DefaultSnapshotMaxAge = TimeSpan.FromSeconds(10);
+
+    public static IServiceCollection AddBessApplicationInMemoryStores(
+        this IServiceCollection services,
+        TimeSpan? batterySnapshotMaxAge = null,
+        TimeSpan? siteTelemetrySnapshotMaxAge = null)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        var batteryMaxAge = batterySnapshotMaxAge ?? DefaultSnapshotMaxAge;
+        var siteTelemetryMaxAge = siteTelemetrySnapshotMaxAge ?? DefaultSnapshotMaxAge;
+
+        services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<IBatteryAssetRegistry>(_ => new InMemoryBatteryAssetRegistry());
+        services.AddSingleton<ISnapshotStore>(_ => new InMemorySnapshotStore(batteryMaxAge));
+        services.AddSingleton<ISiteTelemetryStore>(_ => new InMemorySiteTelemetryStore(siteTelemetryMaxAge));
+        services.AddSingleton<IChpTelemetryStore, InMemoryChpTelemetryStore>();
+        services.AddSingleton<ISiteConsumptionStore, InMemorySiteConsumptionStore>();
+        services.AddSingleton<ISiteConsumptionPollStatusStore, InMemorySiteConsumptionPollStatusStore>();
+        services.AddSingleton<ISiteMeasurementStore, InMemorySiteMeasurementStore>();
+        services.AddSingleton<ISitePvProfileStore, InMemorySitePvProfileStore>();
+        services.AddSingleton<ISolarForecastStore, InMemorySolarForecastStore>();
+        services.AddConfiguredSiteCatalog();
+        services.AddSingleton<ISiteSettingsPreparationUseCase, DefaultSiteSettingsPreparationUseCase>();
+        services.AddSingleton<ISiteBalanceUseCase, DefaultSiteBalanceUseCase>();
+        services.AddSingleton<IOrchestrationRunStore, InMemoryOrchestrationRunStore>();
+        services.AddSingleton<IOrchestrationLockStore, InMemoryOrchestrationLockStore>();
+        services.AddSingleton<IDataBalanceStore, InMemoryDataBalanceStore>();
+        services.AddSingleton<IDataReadinessPolicy, DefaultDataReadinessPolicy>();
+        services.AddSingleton<IShadowPlanComparisonStore, InMemoryShadowPlanComparisonStore>();
+        services.AddSingleton(new PilotReadinessOptions());
+        services.AddSingleton<IPilotReadinessUseCase, DefaultPilotReadinessUseCase>();
+        services.AddSingleton<IOrchestrationModule, ShadowPlanComparisonModule>();
+        services.AddSingleton<IOrchestrationUseCase, DefaultOrchestrationUseCase>();
+        services.AddSingleton<IShadowRunTrigger, DefaultShadowRunTrigger>();
+        services.AddSingleton<IActivationProposalStore, InMemoryActivationProposalStore>();
+        services.AddSingleton<IActivationProposalUseCase, DefaultActivationProposalUseCase>();
+        services.AddSingleton<IActivationWriterSafetyStore, InMemoryActivationWriterSafetyStore>();
+        services.AddSingleton<IActivationCutoverStore, FailClosedActivationCutoverStore>();
+        services.AddSingleton<IActivationCutoverUseCase, DefaultActivationCutoverUseCase>();
+        services.AddSingleton<IActivationPilotSessionStore, FailClosedActivationPilotSessionStore>();
+        services.AddSingleton<IActivationPilotSessionUseCase, DefaultActivationPilotSessionUseCase>();
+        services.AddSingleton<IActivationPrewriteClaimStore, FailClosedActivationPrewriteClaimStore>();
+        services.AddSingleton<IActivationPlanDispatcher, FailClosedActivationPlanDispatcher>();
+        services.AddSingleton<IActivationDispatchExecutionUseCase, DefaultActivationDispatchExecutionUseCase>();
+        services.AddSingleton<ICommandRepository, InMemoryCommandRepository>();
+        services.AddSingleton<IScheduleRepository>(_ => new InMemoryScheduleRepository());
+        services.AddSingleton<IScheduleTracker, DefaultScheduleTracker>();
+        services.AddSingleton<IReserveRepository>(_ => new InMemoryReserveRepository());
+        services.AddSingleton<InMemoryPriceSeriesStore>();
+        services.AddSingleton<IPriceSeriesSource>(
+            sp => sp.GetRequiredService<InMemoryPriceSeriesStore>());
+        services.AddSingleton<IPriceSeriesImportSink>(
+            sp => sp.GetRequiredService<InMemoryPriceSeriesStore>());
+
+        // RM-M4-03-B: Regelleistung activation dedupe tracker. Default
+        // bindings are in-memory; AddBessPersistence replaces the store
+        // with the Dapper variant when persistence is wired. The
+        // RegelleistungOptions singleton uses the master-DoD defaults
+        // (MaxAge=2s, FutureSkewTolerance=500ms, DedupeWindow=10s);
+        // Sub-Slice D adds IConfiguration binding for operator overrides.
+        services.AddSingleton(_ => new RegelleistungOptions());
+        services.AddSingleton<IActivationDedupeStore>(sp => new InMemoryActivationDedupeStore(
+            sp.GetRequiredService<RegelleistungOptions>(),
+            sp.GetRequiredService<IClock>()));
+        // RM-M4-03-C: pipeline orchestrator. Composes the per-sample
+        // schema check, ActivationTimeValidator, TimebaseDegraded gate,
+        // and the dedupe store in the DoD-pinned order.
+        services.AddSingleton<ActivationValidator>();
+
+        // RM-M4-03-D: timebase health source (cycle owner writes,
+        // activation pipeline reads), the activation dispatch source
+        // (use-case writes after Accepted, optimizer reads per tick),
+        // last-activation state holder (audit + /health surface), the
+        // production-gate provider (fail-closed on security-profile
+        // until F-12), and the activation use-case itself.
+        // M4-03 Finding-2 fix: ein einziger InMemoryTimebaseHealthSource-
+        // Singleton bedient beide Driven Ports — `ITimebaseHealthSource`
+        // (Reader-Pfad für Use-Case/PreconditionProvider/Health-Endpoint)
+        // und `ITimebaseHealthObserver` (Writer-Pfad für den ControlCycle-
+        // HostedService, der pro Tick `Observe(bool)` ruft).
+        // RM-M5-01-C: Idempotency-Store als InMemory-Default (Dapper-
+        // backed Persistence kommt in Sub-Slice-C Persistenz-Schicht).
+        // Worker-owned, registriert pro Asset-Lifetime; Process-Restart
+        // verliert In-Memory-Tracker — siehe DapperOptimizationIdempotency-
+        // Store-Folgelinie.
+        services.AddSingleton<IOptimizationIdempotencyStore, InMemoryOptimizationIdempotencyStore>();
+
+        // RM-M5-01-C: Fallback-Plan-Validator. Default-Options aus
+        // plan-RM-M5 §Fallback-Plan-Gueltigkeit; Operator-Overrides
+        // pro ScheduleType kämen über IConfiguration (Folgearbeit).
+        services.AddSingleton(new FallbackPlanValidatorOptions());
+        services.AddSingleton<IFallbackPlanValidator, DefaultFallbackPlanValidator>();
+
+        services.AddSingleton<InMemoryTimebaseHealthSource>();
+        services.AddSingleton<ITimebaseHealthSource>(
+            sp => sp.GetRequiredService<InMemoryTimebaseHealthSource>());
+        services.AddSingleton<ITimebaseHealthObserver>(
+            sp => sp.GetRequiredService<InMemoryTimebaseHealthSource>());
+        services.AddSingleton<IActivationDispatchSource, InMemoryActivationDispatchSource>();
+        services.AddSingleton<IRegelleistungActivationStateStore, InMemoryRegelleistungActivationStateStore>();
+        services.AddSingleton<IProductionPreconditionProvider, DefaultProductionPreconditionProvider>();
+        services.AddSingleton<IRegelleistungActivationUseCase, DefaultRegelleistungActivationUseCase>();
+        services.AddSingleton<IRegelleistungHealthQuery, DefaultRegelleistungHealthQuery>();
+
+        services.AddSingleton<IOperatorStopRegistry, InMemoryOperatorStopRegistry>();
+        services.AddSingleton<IOperatorAuditLog, InMemoryOperatorAuditLog>();
+
+        // Optimization-run persistence (RM-M2-OP-04). Dapper variant
+        // lands in RM-M2-OP-06 and replaces this binding via the
+        // composition root, mirroring the M1 in-memory ↔ Dapper pattern.
+        services.AddSingleton<IOptimizationRunRepository, InMemoryOptimizationRunRepository>();
+        services.AddSingleton<IMpcRunRepository, InMemoryMpcRunRepository>();
+
+        // Schedule optimiser default — stays Failed/no-solver-configured
+        // until RM-M2-OP-05 plugs in the OR-Tools adapter through the
+        // Composition Root.
+        services.AddSingleton<IScheduleOptimizer, NoOpScheduleOptimizer>();
+
+        // Dispatch optimiser default (RM-M2-01): the schedule-following
+        // implementation picks the highest-priority commitment per
+        // LH-MKT-006 and emits its PowerKw. With no active commitment
+        // it returns Idle — same observable behaviour as the legacy
+        // NoOpDispatchOptimizer for hosts that haven't seeded any
+        // schedules yet.
+        services.AddSingleton<IDispatchOptimizer, ScheduleFollowingDispatchOptimizer>();
+
+        // Observability default. Telemetry hosts (Worker/Host) replace
+        // this with PrometheusOptimizationRunMetrics via AddBessTelemetry;
+        // API-only test hosts keep the no-op so the use case resolves
+        // without dragging the Prometheus adapter in.
+        services.AddSingleton<IOptimizationRunMetrics>(_ => NoOpOptimizationRunMetrics.Instance);
+        services.AddSingleton<IOptimizationCoreMetrics>(_ => NoOpOptimizationCoreMetrics.Instance);
+
+        // Driving-port use cases.
+        services.AddSingleton<IHealthQuery, DefaultHealthQuery>();
+        services.AddSingleton<IBatteryStatusQuery, DefaultBatteryStatusQuery>();
+        services.AddSingleton<ISiteStatusQuery, DefaultSiteStatusQuery>();
+        services.AddSingleton<ISolarForecastQuery, DefaultSolarForecastQuery>();
+        services.AddSingleton<IScheduleQuery, DefaultScheduleQuery>();
+        services.AddSingleton<IOperatorStopUseCase, DefaultOperatorStopUseCase>();
+        services.AddSingleton<IScheduleOptimizationUseCase, DefaultScheduleOptimizationUseCase>();
+        services.AddSingleton<IIntradayReoptimizationUseCase, DefaultIntradayReoptimizationUseCase>();
+        return services;
+    }
+
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812", Justification = "Instantiated by the DI container via reflection.")]
+    private sealed class SystemClock : IClock
+    {
+        public DateTimeOffset UtcNow => DateTimeOffset.UtcNow;
+    }
+}

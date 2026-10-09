@@ -1,0 +1,52 @@
+{
+  "siteId": "site-reference",
+  "deliveryDate": "2026-09-23",
+  "payloadReady": true,
+  "blockingCodes": [],
+  "windows": [
+    {
+      "windowId": "Z1",
+      "intervals": [
+        { "startTime": "00:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 30, "voltage": 290 },
+        { "startTime": "01:00", "enableGeneration": true, "enableGridCharge": true, "enableSell": false, "powerWatts": 80000, "socPercent": 100, "voltage": 290 },
+        { "startTime": "02:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 100, "voltage": 290 },
+        { "startTime": "03:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": true, "powerWatts": 80000, "socPercent": 30, "voltage": 290 },
+        { "startTime": "04:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 30, "voltage": 290 },
+        { "startTime": "05:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 30, "voltage": 290 }
+      ]
+    },
+    {
+      "windowId": "Z2",
+      "intervals": [
+        { "startTime": "00:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 30, "voltage": 290 },
+        { "startTime": "06:00", "enableGeneration": true, "enableGridCharge": true, "enableSell": false, "powerWatts": 80000, "socPercent": 100, "voltage": 290 },
+        { "startTime": "07:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 100, "voltage": 290 },
+        { "startTime": "08:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": true, "powerWatts": 80000, "socPercent": 30, "voltage": 290 },
+        { "startTime": "09:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 30, "voltage": 290 },
+        { "startTime": "11:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 30, "voltage": 290 }
+      ]
+    },
+    {
+      "windowId": "Z3",
+      "intervals": [
+        { "startTime": "00:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 30, "voltage": 290 },
+        { "startTime": "12:00", "enableGeneration": true, "enableGridCharge": true, "enableSell": false, "powerWatts": 80000, "socPercent": 100, "voltage": 290 },
+        { "startTime": "13:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 100, "voltage": 290 },
+        { "startTime": "14:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": true, "powerWatts": 80000, "socPercent": 30, "voltage": 290 },
+        { "startTime": "15:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 30, "voltage": 290 },
+        { "startTime": "17:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 30, "voltage": 290 }
+      ]
+    },
+    {
+      "windowId": "Z4",
+      "intervals": [
+        { "startTime": "00:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 30, "voltage": 290 },
+        { "startTime": "18:00", "enableGeneration": true, "enableGridCharge": true, "enableSell": false, "powerWatts": 80000, "socPercent": 100, "voltage": 290 },
+        { "startTime": "19:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 100, "voltage": 290 },
+        { "startTime": "20:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": true, "powerWatts": 80000, "socPercent": 30, "voltage": 290 },
+        { "startTime": "21:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 30, "voltage": 290 },
+        { "startTime": "23:00", "enableGeneration": true, "enableGridCharge": false, "enableSell": false, "powerWatts": 0, "socPercent": 30, "voltage": 290 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>BatteryEms.Host</RootNamespace>
+    <AssemblyName>BatteryEms.Host</AssemblyName>
+    <!-- The host is the composition root: it cross-references every layer
+         and project, so CA1515 (internal-by-default for "applications")
+         doesn't apply meaningfully here. -->
+    <NoWarn>$(NoWarn);CA1515</NoWarn>
+    <!-- Microsoft.AspNetCore.OpenApi's source generator emits C# 13
+         interceptors; opt the project into that namespace explicitly so
+         the build doesn't trip over CS9137. -->
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.AspNetCore.OpenApi.Generated</InterceptorsNamespaces>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="prometheus-net.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\hexagon\BatteryEms.Domain\BatteryEms.Domain.csproj" />
+    <ProjectReference Include="..\..\hexagon\BatteryEms.Application\BatteryEms.Application.csproj" />
+    <ProjectReference Include="..\..\infrastructure\BatteryEms.Infrastructure\BatteryEms.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\adapters\driving\BatteryEms.Api\BatteryEms.Api.csproj" />
+    <ProjectReference Include="..\..\adapters\driving\BatteryEms.Worker\BatteryEms.Worker.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Modbus\BatteryEms.Adapters.Modbus.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Mqtt\BatteryEms.Adapters.Mqtt.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.OpcUa\BatteryEms.Adapters.OpcUa.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.NativeInterop\BatteryEms.Adapters.NativeInterop.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Optimization\BatteryEms.Adapters.Optimization.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.OptimizationCore\BatteryEms.Adapters.OptimizationCore.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Persistence\BatteryEms.Adapters.Persistence.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Telemetry\BatteryEms.Adapters.Telemetry.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.DeyeCloud\BatteryEms.Adapters.DeyeCloud.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Entsoe\BatteryEms.Adapters.Entsoe.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.FusionSolar\BatteryEms.Adapters.FusionSolar.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.Askue\BatteryEms.Adapters.Askue.csproj" />
+    <ProjectReference Include="..\..\adapters\driven\BatteryEms.Adapters.OpenMeteo\BatteryEms.Adapters.OpenMeteo.csproj" />
+    <ProjectReference Include="../../adapters/driven/BatteryEms.Adapters.Telecontrol/BatteryEms.Adapters.Telecontrol.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Console composition root: synchronous local startup config, no synchronization context. -->
+    <NoWarn>$(NoWarn);CA1506;CA1849;CA2007</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/adapters/driven/BatteryEms.Adapters.Telecontrol/BatteryEms.Adapters.Telecontrol.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,9 @@
+{
+  "siteId": "site-reference",
+  "deliveryDate": "2026-09-24",
+  "payloadReady": false,
+  "blockingCodes": [
+    "OREE_DAM_TARGET_ROW_MISSING"
+  ],
+  "windows": []
+}
