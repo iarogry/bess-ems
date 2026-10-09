@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BatteryEms.Application.Realtime;
+using BatteryEms.Application.Site;
 using BatteryEms.Domain;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,19 +48,40 @@ public sealed class FusionSolarSiteTelemetrySourceTests
         var factory = Substitute.For<IHttpClientFactory>();
         factory.CreateClient("FusionSolar").Returns(client);
         var store = new InMemorySiteTelemetryStore(TimeSpan.FromMinutes(10));
+        var measurementsStore = new InMemorySiteMeasurementStore();
         using var source = new FusionSolarSiteTelemetrySource(factory,
-            Options.Create(new FusionSolarOptions { StationCodes = "A,B", User = "user", Password = "password" }),
-            store, Substitute.For<ILogger<FusionSolarSiteTelemetrySource>>());
+            Options.Create(new FusionSolarOptions { StationCodes = "A,B", User = "user", Password = "password",
+                StationSiteIds = { ["A"] = "site-a" } }),
+            store, Substitute.For<ILogger<FusionSolarSiteTelemetrySource>>(), measurementsStore);
         await source.PollAsync(MeasurementTime, CancellationToken.None);
         await source.PollAsync(MeasurementTime.AddMinutes(5), CancellationToken.None);
         var snapshot = store.GetLatest("A", MeasurementTime.AddMinutes(5))!;
         Assert.Equal(expected, snapshot.Telemetry.PvPowerKw);
         Assert.Equal(quality, snapshot.Quality.Flag.ToString());
+        await AssertPersistedAsync(measurementsStore, expected, omitInverter ? "source_error" : omitSampleTime ? "substituted" : "valid");
         Assert.Equal(1000, store.GetLatest("B", MeasurementTime.AddMinutes(5))!.Telemetry.PvPowerKw);
         Assert.Single(handler.CapturedRequests, request => request.Path.EndsWith("getDevList", StringComparison.Ordinal));
         Assert.DoesNotContain(handler.CapturedRequests, request => request.Path.EndsWith("getStationRealKpi", StringComparison.Ordinal));
         Assert.All(handler.CapturedRequests.Where(request => request.Path.EndsWith("getDevRealKpi", StringComparison.Ordinal)),
             request => Assert.DoesNotContain("13", request.Body, StringComparison.Ordinal));
+    }
+
+    private static async Task AssertPersistedAsync(ISiteMeasurementStore measurementsStore, double? expected, string quality)
+    {
+        var rows = await measurementsStore.QueryAsync(new SiteMeasurementQuery("site-a", MeasurementTime.AddSeconds(-1),
+            MeasurementTime.AddMinutes(6), Source: "fusionsolar"), CancellationToken.None);
+        Assert.NotEmpty(rows);
+        Assert.All(rows, row =>
+        {
+            Assert.Equal("A", row.InstrumentId);
+            Assert.Equal("pv_power", row.Metric);
+            Assert.Equal("kW", row.Unit);
+            Assert.Equal(expected, row.Value);
+            Assert.Equal(quality, row.Quality);
+            row.EnsureValid();
+        });
+        Assert.NotEmpty(await measurementsStore.QueryAsync(new SiteMeasurementQuery("unassigned:fusionsolar:B",
+            MeasurementTime.AddSeconds(-1), MeasurementTime.AddMinutes(6)), CancellationToken.None));
     }
 
     [Theory]
@@ -162,15 +184,53 @@ public sealed class FusionSolarSiteTelemetrySourceTests
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["FusionSolar:User"] = "user", ["FusionSolar:Password"] = "password", ["FusionSolar:StationCodes"] = "A,B",
+            ["Dashboard:Sites:0:SiteId"] = "site-a",
+            ["Dashboard:Sites:0:Sources:0:TelemetryId"] = "A",
+            ["Dashboard:Sites:0:Sources:0:Kind"] = "pv",
         }).Build();
         services.AddFusionSolarSiteTelemetry(configuration, "battery-a");
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<FusionSolarOptions>>().Value;
         Assert.Null(options.AssetId);
         Assert.Empty(options.ParsedSiteStationCodes);
+        Assert.Equal("site-a", options.StationSiteIds["A"]);
     }
 
-    private static (FusionSolarSiteTelemetrySource Source, InMemorySiteTelemetryStore Store) CreateSource(FusionSolarOptions options, object readings)
+    [Fact]
+    public async Task Persistence_failure_does_not_discard_live_snapshot()
+    {
+        var measurements = Substitute.For<ISiteMeasurementStore>();
+        measurements.AppendAsync(Arg.Any<IReadOnlyList<SiteMeasurementReading>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new InvalidOperationException("Database unavailable")));
+        var (source, store) = CreateSource(new FusionSolarOptions { UseDeviceTelemetry = false, StationCodes = "A" },
+            new[] { new { stationCode = "A", collectTime = MeasurementTime.ToUnixTimeMilliseconds(), dataItemMap = new { active_power = 12 } } }, measurements);
+        using (source)
+        {
+            Assert.Equal(1, await source.PollAsync(MeasurementTime, CancellationToken.None));
+            Assert.Equal(12, store.GetLatest("A", MeasurementTime)!.Telemetry.PvPowerKw);
+            await measurements.Received(1).AppendAsync(Arg.Any<IReadOnlyList<SiteMeasurementReading>>(), Arg.Any<CancellationToken>());
+        }
+    }
+
+    [Fact]
+    public async Task Source_failure_persists_null_status_instead_of_zero_power()
+    {
+        var measurements = new InMemorySiteMeasurementStore();
+        var (source, _) = CreateSource(new FusionSolarOptions { UseDeviceTelemetry = false, StationCodes = "A" },
+            new { unexpected = true }, measurements);
+        using (source)
+        {
+            Assert.Equal(0, await source.PollAsync(MeasurementTime, CancellationToken.None));
+            var rows = await measurements.QueryAsync(new SiteMeasurementQuery("unassigned:fusionsolar:A",
+                MeasurementTime.AddSeconds(-1), MeasurementTime.AddSeconds(1)), CancellationToken.None);
+            var row = Assert.Single(rows);
+            Assert.Null(row.Value);
+            Assert.Equal("source_error", row.Quality);
+        }
+    }
+
+    private static (FusionSolarSiteTelemetrySource Source, InMemorySiteTelemetryStore Store) CreateSource(FusionSolarOptions options, object readings,
+        ISiteMeasurementStore? measurements = null)
     {
         var handler = new MockHttpMessageHandler();
         handler.AddResponse("login", new { success = true }, setCookie: "XSRF-TOKEN=test-token; Path=/");
@@ -180,7 +240,7 @@ public sealed class FusionSolarSiteTelemetrySourceTests
         factory.CreateClient("FusionSolar").Returns(client);
         var store = new InMemorySiteTelemetryStore(TimeSpan.FromMinutes(10));
         return (new FusionSolarSiteTelemetrySource(factory, Options.Create(options), store,
-            Substitute.For<ILogger<FusionSolarSiteTelemetrySource>>()), store);
+            Substitute.For<ILogger<FusionSolarSiteTelemetrySource>>(), measurements), store);
     }
 
     [Fact]

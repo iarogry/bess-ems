@@ -9,6 +9,7 @@ public sealed class TelecontrolOptions
     [Required] public string Username { get; set; } = string.Empty;
     [Required] public string Password { get; set; } = string.Empty;
     [Required] public string AssetId { get; set; } = string.Empty;
+    public string? SiteId { get; set; }
     [Range(1, int.MaxValue)] public int DeviceId { get; set; }
     [Required] public string SourceTimeZoneId { get; set; } = string.Empty;
     // Until the provider clock convention is confirmed, dashboard values are estimated.

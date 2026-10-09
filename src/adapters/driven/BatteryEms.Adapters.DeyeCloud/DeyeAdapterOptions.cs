@@ -27,6 +27,8 @@ public sealed class DeyeAdapterOptions
     /// </summary>
     public string? AssetId { get; set; }
 
+    public string? SiteId { get; set; }
+
     /// <summary>
     /// True when Password already contains the SHA-256 hex value expected by Deye Cloud.
     /// </summary>

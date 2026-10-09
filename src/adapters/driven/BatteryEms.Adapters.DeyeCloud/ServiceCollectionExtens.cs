@@ -26,6 +26,16 @@ public static class ServiceCollectionExtensions
                 {
                     options.AssetId = defaultAssetId;
                 }
+                var siteIds = configuration.GetSection("Dashboard:Sites").GetChildren()
+                    .Where(site => site.GetSection("Sources").GetChildren().Any(source =>
+                        source["Kind"] == "battery" && source["TelemetryId"] == options.AssetId))
+                    .Select(site => site["SiteId"]).Where(id => !string.IsNullOrWhiteSpace(id))
+                    .Distinct(StringComparer.Ordinal).ToArray();
+                if (siteIds.Length > 1 || (siteIds.Length == 1 && !string.IsNullOrWhiteSpace(options.SiteId) && options.SiteId != siteIds[0]))
+                {
+                    throw new InvalidOperationException("Deye Cloud asset has conflicting site assignments.");
+                }
+                if (siteIds.Length == 1) { options.SiteId = siteIds[0]; }
             })
             .ValidateDataAnnotations()
             .Validate(options =>

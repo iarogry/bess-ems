@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(configuration);
         if (!configuration.GetValue<bool>("Telecontrol:Enabled")) { return services; }
         services.AddOptions<TelecontrolOptions>().Bind(configuration.GetSection(TelecontrolOptions.SectionName))
+            .PostConfigure(options => ConfigureSiteId(options, configuration))
             .ValidateDataAnnotations()
             .Validate(value => IsHttps(value.AuthBaseUrl) && IsHttps(value.GatewayBaseUrl), "Telecontrol endpoints must be HTTPS base URLs ending in /.")
             .Validate(value => TimeZoneInfo.TryFindSystemTimeZoneById(value.SourceTimeZoneId, out _), "Telecontrol source timezone must exist.")
@@ -28,6 +29,20 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<TelecontrolClient>();
         services.AddHostedService<TelecontrolPollingService>();
         return services;
+    }
+
+    private static void ConfigureSiteId(TelecontrolOptions options, IConfiguration configuration)
+    {
+        var sites = configuration.GetSection("Dashboard:Sites").GetChildren()
+            .Where(site => site.GetSection("Sources").GetChildren().Any(source =>
+                source["Kind"] == "chp" && source["TelemetryId"] == options.AssetId))
+            .Select(site => site["SiteId"]).Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal).ToArray();
+        if (sites.Length > 1 || (sites.Length == 1 && !string.IsNullOrWhiteSpace(options.SiteId) && options.SiteId != sites[0]))
+        {
+            throw new InvalidOperationException("Telecontrol asset has conflicting site assignments.");
+        }
+        if (sites.Length == 1) { options.SiteId = sites[0]; }
     }
 
     private static bool IsHttps(Uri uri) => uri.IsAbsoluteUri

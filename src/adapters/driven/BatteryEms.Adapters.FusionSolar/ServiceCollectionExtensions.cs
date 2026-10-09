@@ -18,8 +18,30 @@ public static class ServiceCollectionExtensions
         services
             .AddOptions<FusionSolarOptions>()
             .Bind(configuration.GetSection(FusionSolarOptions.SectionName))
+            .PostConfigure(options =>
+            {
+                foreach (var site in configuration.GetSection("Dashboard:Sites").GetChildren())
+                {
+                    var siteId = site["SiteId"];
+                    if (string.IsNullOrWhiteSpace(siteId)) { continue; }
+                    foreach (var source in site.GetSection("Sources").GetChildren())
+                    {
+                        var id = source["TelemetryId"];
+                        if (source["Kind"] == "pv" && id is not null && options.ParsedStationCodes.Contains(id, StringComparer.OrdinalIgnoreCase))
+                        {
+                            if (options.StationSiteIds.TryGetValue(id, out var existing) && existing != siteId)
+                            {
+                                throw new InvalidOperationException("FusionSolar station has conflicting site assignments.");
+                            }
+                            options.StationSiteIds[id] = siteId;
+                        }
+                    }
+                }
+            })
             .ValidateDataAnnotations()
             .Validate(options => options.ParsedStationCodes.Count > 0, "FusionSolar:StationCodes is required.")
+            .Validate(options => options.StationSiteIds.All(pair => !string.IsNullOrWhiteSpace(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value)),
+                "FusionSolar:StationSiteIds requires nonempty station codes and site IDs.")
             .Validate(options => options.ParsedSiteStationCodes.Count == 0
                 || (!string.IsNullOrWhiteSpace(options.AssetId)
                     && options.ParsedSiteStationCodes.All(code => options.ParsedStationCodes.Contains(code, StringComparer.OrdinalIgnoreCase))),

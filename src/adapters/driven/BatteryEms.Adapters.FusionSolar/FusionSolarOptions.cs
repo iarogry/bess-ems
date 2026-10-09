@@ -25,6 +25,8 @@ public sealed class FusionSolarOptions
     // Explicit site membership; the provider account's station list is not a site.
     public string? SiteStationCodes { get; set; }
 
+    public Dictionary<string, string> StationSiteIds { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     public bool UseDeviceTelemetry { get; set; } = true;
 
     [Range(60, 3600)]

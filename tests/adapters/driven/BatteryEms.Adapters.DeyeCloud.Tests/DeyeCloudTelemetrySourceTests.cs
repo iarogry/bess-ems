@@ -3,9 +3,13 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using BatteryEms.Adapters.DeyeCloud;
 using BatteryEms.Application.Realtime;
+using BatteryEms.Application.Site;
+using BatteryEms.Application.Persistence;
 using BatteryEms.Domain;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Xunit;
 
@@ -17,7 +21,29 @@ public sealed class DeyeCloudTelemetrySourceTests
     private readonly ILogger<DeyeCloudTelemetrySource> _logger = Substitute.For<ILogger<DeyeCloudTelemetrySource>>();
 
     [Fact]
-    public async Task ReadAsync_CallsStationLatest_WhenStationIdIsProvided()
+    public void Site_binding_and_persistence_ports_are_resolved_from_host_services()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["DeyeCloud:AppId"] = "test", ["DeyeCloud:AppSecret"] = "test", ["DeyeCloud:Email"] = "test@example.com",
+            ["DeyeCloud:Password"] = "test", ["DeyeCloud:StationId"] = "station-a",
+            ["Dashboard:Sites:0:SiteId"] = "site-a", ["Dashboard:Sites:0:Sources:0:Kind"] = "battery",
+            ["Dashboard:Sites:0:Sources:0:TelemetryId"] = "asset-a",
+        }).Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<ISiteMeasurementStore>(new InMemorySiteMeasurementStore());
+        services.AddSingleton(Substitute.For<ITelemetryRepository>());
+        services.AddDeyeCloudTelemetry(configuration, "asset-a");
+        using var provider = services.BuildServiceProvider();
+        Assert.Equal("site-a", provider.GetRequiredService<IOptions<DeyeAdapterOptions>>().Value.SiteId);
+        Assert.IsType<DeyeCloudTelemetrySource>(provider.GetRequiredService<BatteryEms.Application.IO.IBatteryTelemetrySource>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReadAsync_CallsStationLatest_WhenStationIdIsProvided(bool failBatteryPersistence)
     {
         // Arrange
         var options = new DeyeAdapterOptions
@@ -28,6 +54,7 @@ public sealed class DeyeCloudTelemetrySourceTests
             Email = "test@example.com",
             Password = "password",
             StationId = "station-123",
+            SiteId = "site-a",
             AssetId = "single-bess-1"
         };
 
@@ -65,7 +92,9 @@ public sealed class DeyeCloudTelemetrySourceTests
         _httpClientFactory.CreateClient("DeyeCloud").Returns(httpClient);
 
         var siteTelemetry = new InMemorySiteTelemetryStore(TimeSpan.FromSeconds(10));
-        var source = new DeyeCloudTelemetrySource(_httpClientFactory, Options.Create(options), _logger, siteTelemetry);
+        var measurements = new InMemorySiteMeasurementStore();
+        var repository = CreateRepository(failBatteryPersistence);
+        var source = new DeyeCloudTelemetrySource(_httpClientFactory, Options.Create(options), _logger, siteTelemetry, measurements, repository);
 
         // Act
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
@@ -90,9 +119,35 @@ public sealed class DeyeCloudTelemetrySourceTests
         Assert.Equal(-18.452, siteSnapshot.Telemetry.LoadPowerKw);
         Assert.Equal(-92.421, siteSnapshot.Telemetry.GridPowerKw);
         Assert.Equal(512, siteSnapshot.Telemetry.IrradianceWPerSquareMeter);
+        await AssertPersistedAsync(measurements, repository, telemetry);
 
         var stationRequest = handler.Requests.FirstOrDefault(r => r.RequestUri?.AbsolutePath.EndsWith("station/latest", StringComparison.Ordinal) == true);
         Assert.NotNull(stationRequest);
+    }
+
+    private static async Task AssertPersistedAsync(ISiteMeasurementStore measurements, ITelemetryRepository repository, BatteryTelemetry telemetry)
+    {
+        var rows = await measurements.QueryAsync(new SiteMeasurementQuery("site-a", telemetry.Timestamp.AddSeconds(-1),
+            telemetry.Timestamp.AddSeconds(1), Source: "deye_cloud"), CancellationToken.None);
+        Assert.Equal(8, rows.Count);
+        Assert.Equal(77.79, Assert.Single(rows, row => row.Metric == "pv_power").Value);
+        Assert.Equal(-1.11, Assert.Single(rows, row => row.Metric == "battery_power").Value);
+        Assert.Equal(99.5, Assert.Single(rows, row => row.Metric == "battery_soc").Value);
+        Assert.Equal("missing", Assert.Single(rows, row => row.Metric == "dc_voltage").Quality);
+        Assert.All(rows, row => { Assert.Equal("station-123", row.InstrumentId); row.EnsureValid(); });
+        await repository.Received(1).AppendAsync(Arg.Is<BatteryTelemetry>(value => value.AssetId == "single-bess-1"
+            && value.DataQuality.Flag == DataQualityState.Substituted && value.ActivePowerKw == -1.11), Arg.Any<CancellationToken>());
+    }
+
+    private static ITelemetryRepository CreateRepository(bool fail)
+    {
+        var repository = Substitute.For<ITelemetryRepository>();
+        if (fail)
+        {
+            repository.AppendAsync(Arg.Any<BatteryTelemetry>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromException(new InvalidOperationException("Database unavailable")));
+        }
+        return repository;
     }
 
     [Fact]

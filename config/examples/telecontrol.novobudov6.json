@@ -3,6 +3,7 @@
     "Enabled": true,
     "DeviceId": 5552,
     "AssetId": "telecontrol-5552",
+    "SiteId": "site-khlibzavod-5",
     "SourceTimeZoneId": "Europe/Berlin",
     "ClockConfirmed": false,
     "PollIntervalSeconds": 30,

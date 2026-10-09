@@ -11,6 +11,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using BatteryEms.Application.IO;
 using BatteryEms.Application.Realtime;
+using BatteryEms.Application.Site;
+using BatteryEms.Application.Persistence;
 using BatteryEms.Domain;
 
 namespace BatteryEms.Adapters.DeyeCloud;
@@ -34,6 +36,8 @@ public sealed partial class DeyeCloudTelemetrySource : IBatteryTelemetrySource, 
     private readonly DeyeAdapterOptions _options;
     private readonly ILogger<DeyeCloudTelemetrySource> _logger;
     private readonly ISiteTelemetryStore? _siteTelemetry;
+    private readonly ISiteMeasurementStore? _measurements;
+    private readonly ITelemetryRepository? _telemetryRepository;
 
     private readonly SemaphoreSlim _tokenLock = new(1, 1);
     private string? _cachedToken;
@@ -62,12 +66,16 @@ public sealed partial class DeyeCloudTelemetrySource : IBatteryTelemetrySource, 
         IHttpClientFactory httpClientFactory,
         IOptions<DeyeAdapterOptions> options,
         ILogger<DeyeCloudTelemetrySource> logger,
-        ISiteTelemetryStore? siteTelemetry = null)
+        ISiteTelemetryStore? siteTelemetry = null,
+        ISiteMeasurementStore? measurements = null,
+        ITelemetryRepository? telemetryRepository = null)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _options           = options?.Value     ?? throw new ArgumentNullException(nameof(options));
         _logger            = logger             ?? throw new ArgumentNullException(nameof(logger));
         _siteTelemetry     = siteTelemetry;
+        _measurements = measurements;
+        _telemetryRepository = telemetryRepository;
     }
 
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Infrastructure gateway must translate any cloud crash into an explicit ProtocolError to safely trigger BESS safe mode.")]
@@ -79,6 +87,8 @@ public sealed partial class DeyeCloudTelemetrySource : IBatteryTelemetrySource, 
 
         while (!cancellationToken.IsCancellationRequested)
         {
+            SiteTelemetry? siteReading = null;
+            Dictionary<string, double?>? batteryValues = null;
             BatteryTelemetry telemetry;
 
             try
@@ -134,6 +144,13 @@ public sealed partial class DeyeCloudTelemetrySource : IBatteryTelemetrySource, 
                     var pvPowerW = TryGetOptionalDouble(dataList, KeyPvPower);
                     var loadPowerW = TryGetOptionalDouble(dataList, KeyLoadPower);
                     var irradiance = TryGetOptionalDouble(dataList, KeyIrradiance);
+                    batteryValues = new Dictionary<string, double?>
+                    {
+                        ["battery_power"] = ToKilowatts(TryGetOptionalDouble(dataList, KeyBatteryPower)),
+                        ["soc"] = TryGetOptionalDouble(dataList, KeyBatteryCapacity),
+                        ["dc_voltage"] = TryGetOptionalDouble(dataList, KeyBatteryVoltage),
+                        ["dc_current"] = TryGetOptionalDouble(dataList, KeyBatteryCurrent),
+                    };
 
                     double activeKw = batteryPowerW switch
                     {
@@ -146,6 +163,8 @@ public sealed partial class DeyeCloudTelemetrySource : IBatteryTelemetrySource, 
                     _lastError = null;
                     _lastSuccessfulRead = DateTimeOffset.UtcNow;
                     UpdateSiteTelemetry(assetId, pvPowerW, loadPowerW, gridPowerW, irradiance, _lastSuccessfulRead.Value);
+                    siteReading = new SiteTelemetry(_lastSuccessfulRead.Value, assetId,
+                        ToKilowatts(pvPowerW), ToKilowatts(loadPowerW), ToKilowatts(gridPowerW), irradiance, DataQuality.Valid);
 
                     telemetry = new BatteryTelemetry(
                         Timestamp: DateTimeOffset.UtcNow,
@@ -173,10 +192,68 @@ public sealed partial class DeyeCloudTelemetrySource : IBatteryTelemetrySource, 
                 telemetry = CreateInvalidTelemetry($"API Error: {ex.Message}");
             }
 
+            await PersistAsync(telemetry, siteReading, batteryValues, cancellationToken).ConfigureAwait(false);
             yield return telemetry;
 
             await Task.Delay(TimeSpan.FromSeconds(_options.PollIntervalSeconds), cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Storage outages must not stop the live telemetry iterator; failures are logged.")]
+    private async Task PersistAsync(BatteryTelemetry battery, SiteTelemetry? site,
+        IReadOnlyDictionary<string, double?>? batteryValues, CancellationToken cancellationToken)
+    {
+        const string timeReason = "deye-sample-time-unavailable-observed-at-poll-time";
+        if (_telemetryRepository is not null)
+        {
+            try
+            {
+                await _telemetryRepository.AppendAsync(battery with
+                {
+                    DataQuality = PersistentBatteryQuality(battery, batteryValues),
+                    FaultStatus = battery.Available ? battery.FaultStatus : "deye-source-error",
+                }, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception ex) { LogPersistenceFailed(ex); }
+        }
+        if (_measurements is null) { return; }
+        var id = !string.IsNullOrWhiteSpace(_options.StationId) ? _options.StationId : _options.DeviceSn ?? battery.AssetId;
+        var siteId = string.IsNullOrWhiteSpace(_options.SiteId) ? $"unassigned:deye_cloud:{id}" : _options.SiteId;
+        var rows = new List<SiteMeasurementReading>();
+        void Add(string type, string metric, double? value, string unit)
+        {
+            rows.Add(new SiteMeasurementReading(siteId, "deye_cloud", type, id, id,
+                battery.Timestamp, null, metric, value is double number && double.IsFinite(number) ? number : null,
+                unit, value is double finite && double.IsFinite(finite) ? "substituted" : "missing",
+                MetadataJson: JsonSerializer.Serialize(new { asset_id = battery.AssetId, reason = timeReason })));
+        }
+        Add("pv", "pv_power", site?.PvPowerKw, "kW");
+        Add("load", "load_power", site?.LoadPowerKw, "kW");
+        Add("grid", "grid_power", site?.GridPowerKw, "kW");
+        Add("pv", "irradiance", site?.IrradianceWPerSquareMeter, "W/m2");
+        Add("battery", "battery_power", battery.Available ? batteryValues?.GetValueOrDefault("battery_power") : null, "kW");
+        Add("battery", "battery_soc", battery.Available ? batteryValues?.GetValueOrDefault("soc") : null, "%");
+        Add("battery", "dc_voltage", battery.Available ? batteryValues?.GetValueOrDefault("dc_voltage") : null, "V");
+        Add("battery", "dc_current", battery.Available ? batteryValues?.GetValueOrDefault("dc_current") : null, "A");
+        if (!battery.Available)
+        {
+            rows = rows.Select(row => row with { Quality = "source_error", MetadataJson = "{\"reason\":\"deye-source-error\"}" }).ToList();
+        }
+        try { await _measurements.AppendAsync(rows, cancellationToken).ConfigureAwait(false); }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (Exception ex) { LogPersistenceFailed(ex); }
+    }
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Deye Cloud telemetry persistence failed; live polling continues.")]
+    private partial void LogPersistenceFailed(Exception exception);
+
+    private static DataQuality PersistentBatteryQuality(BatteryTelemetry battery, IReadOnlyDictionary<string, double?>? values)
+    {
+        if (!battery.Available) { return DataQuality.ProtocolError("deye-source-error"); }
+        var reason = "deye-sample-time-unavailable-observed-at-poll-time;soh-reactive-power-temperature-defaulted";
+        if (values?.Values.Any(value => value is null) == true) { reason += ";battery-fields-missing-defaulted-to-zero"; }
+        return DataQuality.Substituted(reason);
     }
 
     private BatteryTelemetry CreateInvalidTelemetry(string reason)

@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Diagnostics.CodeAnalysis;
 using BatteryEms.Application.Realtime;
+using BatteryEms.Application.Site;
 using BatteryEms.Domain;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -25,6 +26,7 @@ public sealed partial class FusionSolarSiteTelemetrySource : IDisposable
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly FusionSolarOptions _options;
     private readonly ISiteTelemetryStore _siteTelemetry;
+    private readonly ISiteMeasurementStore? _measurements;
     private readonly ILogger<FusionSolarSiteTelemetrySource> _logger;
     private readonly SemaphoreSlim _requestGate = new(1, 1);
     private string? _xsrfToken;
@@ -36,7 +38,8 @@ public sealed partial class FusionSolarSiteTelemetrySource : IDisposable
         IHttpClientFactory httpClientFactory,
         IOptions<FusionSolarOptions> options,
         ISiteTelemetryStore siteTelemetry,
-        ILogger<FusionSolarSiteTelemetrySource> logger)
+        ILogger<FusionSolarSiteTelemetrySource> logger,
+        ISiteMeasurementStore? measurements = null)
     {
         ArgumentNullException.ThrowIfNull(httpClientFactory);
         ArgumentNullException.ThrowIfNull(options);
@@ -47,6 +50,7 @@ public sealed partial class FusionSolarSiteTelemetrySource : IDisposable
         _options = options.Value;
         _siteTelemetry = siteTelemetry;
         _logger = logger;
+        _measurements = measurements;
     }
 
     public Task<int> PollAsync(
@@ -98,24 +102,11 @@ public sealed partial class FusionSolarSiteTelemetrySource : IDisposable
         {
             throw;
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
         {
             LogStationPollFailed(ex, stationList);
-            return 0;
-        }
-        catch (JsonException ex)
-        {
-            LogStationPollFailed(ex, stationList);
-            return 0;
-        }
-        catch (TaskCanceledException ex)
-        {
-            LogStationPollFailed(ex, stationList);
-            return 0;
-        }
-        catch (InvalidOperationException ex)
-        {
-            LogStationPollFailed(ex, stationList);
+            await PersistAsync(stationCodes.Select(code => new SiteTelemetry(now, code,
+                null, null, null, null, DataQuality.ProtocolError("fusionsolar-source-error"))), cancellationToken).ConfigureAwait(false);
             return 0;
         }
         finally
@@ -178,8 +169,31 @@ public sealed partial class FusionSolarSiteTelemetrySource : IDisposable
             _siteTelemetry.Update(telemetry, now);
         }
 
+        await PersistAsync(snapshots.Values, cancellationToken).ConfigureAwait(false);
         return snapshots.Values.Count(value => value.PvPowerKw is not null
             && value.DataQuality.Flag is DataQualityState.Valid or DataQualityState.Substituted);
+    }
+
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Storage outages must not prevent live telemetry updates; failures are logged.")]
+    private async Task PersistAsync(IEnumerable<SiteTelemetry> snapshots, CancellationToken cancellationToken)
+    {
+        if (_measurements is null) { return; }
+        var rows = snapshots.Select(snapshot => new SiteMeasurementReading(
+            _options.StationSiteIds.GetValueOrDefault(snapshot.AssetId) ?? $"unassigned:fusionsolar:{snapshot.AssetId}",
+            "fusionsolar", "pv", snapshot.AssetId, snapshot.AssetId, snapshot.Timestamp, null,
+            "pv_power", snapshot.PvPowerKw, "kW", snapshot.DataQuality.Flag switch
+            {
+                DataQualityState.Valid => "valid",
+                DataQualityState.Substituted => "substituted",
+                DataQualityState.Stale => "stale",
+                _ => "source_error",
+            }, MetadataJson: JsonSerializer.Serialize(new { reason = snapshot.DataQuality.Reason }))).ToArray();
+        try
+        {
+            await _measurements.AppendAsync(rows, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (Exception ex) { LogPersistenceFailed(ex); }
     }
 
     private async Task<IReadOnlyList<FusionSolarStationKpi>> ReadDeviceTelemetryAsync(
@@ -444,4 +458,7 @@ public sealed partial class FusionSolarSiteTelemetrySource : IDisposable
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "FusionSolar failed to poll station '{StationCode}'. Continuing with remaining stations.")]
     private partial void LogStationPollFailed(Exception exception, string stationCode);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "FusionSolar measurement persistence failed; live snapshots remain available.")]
+    private partial void LogPersistenceFailed(Exception exception);
 }
